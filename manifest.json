@@ -1,0 +1,10 @@
+{
+  "name": "Check-in — Mônica Souza Terapia Corporal",
+  "short_name": "Check-in",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#F5EEE3",
+  "theme_color": "#F5EEE3",
+  "icons": []
+}

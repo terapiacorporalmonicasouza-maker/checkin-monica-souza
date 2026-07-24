@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Check-in — Mônica Souza Terapia Corporal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#FAF4EC">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Frank+Ruhl+Libre:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Paleta oficial da marca (extraída da logo) */
+    --bg:#FAF4EC; --surface:#FFFFFF; --surface-2:#FBF6EE;
+    --ink:#43312A; --ink-soft:#7A6A5C;
+    --accent:#9C3F29; --accent-dark:#7A2F1E;      /* terracota — ação primária */
+    --gold:#C1852F; --gold-soft:#F1E0C1;           /* dourado — destaque secundário */
+    --chip-bg:#EFDCC4;                             /* pêssego suave */
+    --success:#5C7A52; --success-soft:#E1E8DA;     /* pago integral */
+    --warning:#C1852F; --warning-soft:#F1E0C1;     /* pago parcial / vence em breve */
+    --danger:#9C3F29; --danger-soft:#F3D9CE;       /* pendente / vencido / erro */
+    --staff-bg:#FAF4EC; --staff-card:#FFFFFF; --staff-border:#D9C3AC;
+    --staff-text:#43312A; --staff-text-soft:#7A6A5C; --staff-warn:#9C3F29;
+    --line:#D9C3AC;
+    --serif:'Frank Ruhl Libre', serif; --sans:'DM Sans', sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{background:var(--bg); font-family:var(--sans); color:var(--ink); height:100vh; height:100dvh; overflow:hidden; position:relative;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes shakeErr{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+
+  .screen{position:absolute; inset:0; display:none; flex-direction:column; opacity:0; animation:fadeUp .45s ease;}
+  .screen.active{display:flex; opacity:1;}
+
+  /* ---- PIN & Staff list ---- */
+  #screen-staff, #screen-list{background:var(--staff-bg); color:var(--staff-text);}
+  #screen-staff{align-items:center; justify-content:center; gap:26px;}
+  .staff-label{font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--staff-text-soft); margin-bottom:8px; text-align:center;}
+  .staff-title{font-family:var(--serif); font-size:30px; font-weight:500; text-align:center;}
+  .pin-dots{display:flex; gap:16px;}
+  .pin-dot{width:16px; height:16px; border-radius:50%; border:1.5px solid var(--staff-text-soft);}
+  .pin-dot.filled{background:var(--accent); border-color:var(--accent);}
+  .pin-error{font-size:13px; color:var(--staff-warn); min-height:18px;}
+  .pin-pad{display:grid; grid-template-columns:repeat(3,64px); gap:14px;}
+  .pin-pad button{width:64px; height:64px; border-radius:50%; border:1px solid var(--staff-border); background:var(--staff-card); color:var(--staff-text); font-size:20px; font-family:var(--sans); cursor:pointer;}
+  .pin-pad button.empty{background:transparent; visibility:hidden;}
+
+  #screen-list{padding:40px 48px;}
+  .list-eyebrow{font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--staff-text-soft); margin-bottom:6px;}
+  .list-title{font-family:var(--serif); font-size:28px; font-weight:500; margin-bottom:22px;}
+  .client-rows{display:flex; flex-direction:column; gap:10px; overflow:auto;}
+  .client-row{display:flex; align-items:center; justify-content:space-between; text-align:left; padding:16px 18px; background:var(--staff-card); border:1px solid var(--staff-border); border-radius:12px; cursor:pointer; color:inherit; font-family:inherit;}
+  .client-row .name{font-size:16px; font-weight:600;}
+  .client-row .sub{font-size:13px; color:var(--staff-text-soft); margin-top:2px;}
+  .chip{padding:6px 12px; border-radius:999px; font-size:12px; font-weight:600; background:var(--chip-bg); color:var(--ink);}
+  .chip.zero{background:var(--danger); color:var(--danger-soft);}
+  .loading-msg{font-size:13px; color:var(--staff-text-soft); margin-top:14px;}
+  .newclient-form{display:flex; flex-direction:column; gap:6px; overflow:auto;}
+  .nc-label{font-size:12px; color:var(--staff-text-soft); margin-top:12px;}
+  .nc-input{padding:14px 16px; border-radius:12px; border:1px solid var(--staff-border); background:var(--staff-card); color:var(--staff-text); font-family:var(--sans); font-size:15px;}
+  #ncTipoToggle{width:fit-content;}
+
+  .registro-scroll{overflow:auto; flex:1; padding-bottom:6px;}
+  .registro-section-label{font-size:15px; font-weight:600; color:var(--staff-text); margin-top:18px; margin-bottom:8px;}
+  .emoji-btn-row{display:flex; gap:8px; flex-wrap:wrap;}
+  .emoji-btn{flex:1 1 auto; min-width:88px; padding:12px 8px; border-radius:14px; border:2px solid var(--staff-border); background:var(--staff-card); font-size:13px; text-align:center; cursor:pointer; font-family:var(--sans); color:var(--staff-text);}
+  .emoji-btn .emoji{font-size:26px; display:block; margin-bottom:4px;}
+  .emoji-btn.selected{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .chip-select-grid{display:flex; flex-wrap:wrap; gap:8px;}
+  .chip-select{padding:11px 18px; border-radius:999px; border:1.5px solid var(--staff-border); background:var(--staff-card); font-size:14px; color:var(--staff-text); cursor:pointer; font-family:var(--sans);}
+  .chip-select.selected{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .acompanhar-btn{width:54px; height:54px; flex-shrink:0; border-radius:14px; border:2px solid var(--staff-border); background:var(--staff-card); font-size:24px; cursor:pointer; opacity:.45;}
+  .acompanhar-btn.active{background:var(--gold-soft); border-color:var(--gold); opacity:1;}
+  .observacao-ativa-card{background:var(--gold-soft); border:1.5px solid var(--gold); border-radius:16px; padding:16px 20px; margin-bottom:16px;}
+  .observacao-ativa-card .resumo-card-label{color:var(--accent-dark);}
+  .observacao-ativa-card .observacao-ativa-texto{font-family:var(--serif); font-size:19px; margin-top:6px; color:var(--ink);}
+  .observacao-ativa-card .observacao-ativa-data{font-size:12px; color:var(--ink-soft); margin-top:4px;}
+
+  /* ---- Welcome ---- */
+  #screen-welcome{align-items:center; justify-content:center; gap:20px; padding:40px; text-align:center;}
+  .eyebrow{font-size:16px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent);}
+  .greeting{font-family:var(--serif); font-size:58px; font-weight:500;}
+  .plan-sub{font-size:22px; color:var(--ink-soft);}
+  .gentle-note{font-size:19px; line-height:1.5; color:var(--ink-soft); max-width:480px; margin-top:6px;}
+  .btn-primary{margin-top:10px; padding:22px 48px; min-height:66px; border-radius:999px; border:none; background:var(--accent); color:var(--surface-2); font-size:20px; font-weight:600; cursor:pointer; font-family:inherit;}
+  .btn-primary:disabled{opacity:.5; cursor:default;}
+  .note-toggle{font-size:17px;}
+  .loading-msg-light{font-size:16px; color:var(--ink-soft); text-align:center; margin:8px 0;}
+  .history-list{flex:1; overflow:auto; display:flex; flex-direction:column; gap:12px; margin-top:14px;}
+  .history-card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:18px 20px;}
+  .history-date{font-family:var(--serif); font-size:20px; margin-bottom:6px;}
+  .history-meta{font-size:16px; color:var(--ink-soft); margin-bottom:10px;}
+  .history-regions{display:flex; flex-wrap:wrap; gap:6px;}
+  .history-empty{font-size:16px; color:var(--ink-soft); text-align:center; margin-top:20px;}
+
+  /* ---- Check-in ---- */
+  #screen-checkin{padding:0; flex-direction:column;}
+  .map-title{font-family:var(--serif); font-size:24px; font-weight:500; text-align:center;}
+  .checkin-map-layout{flex:1; min-height:0; display:flex; flex-direction:column;}
+  .checkin-map-main{flex:1 1 auto; min-height:0; display:flex; flex-direction:column;}
+  .checkin-header-compact{flex-shrink:0; padding:18px 24px 8px; display:flex; flex-direction:column; align-items:center; gap:10px;}
+  .body-map-container{flex:1; min-height:0; width:100%; position:relative; display:flex; justify-content:center; align-items:center; overflow:hidden; padding:0 20px;}
+  .body-map-container svg{width:100%; height:100%;}
+  .region-path{cursor:pointer; transition:fill-opacity .15s;}
+  .region-path:hover{fill:#C98A2A; fill-opacity:.35;}
+  .checkin-map-side{flex-shrink:0; padding:14px 24px calc(16px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:10px; background:var(--bg); box-shadow:0 -2px 8px rgba(94,68,59,0.06);}
+  .checkin-side-hint{font-size:15px; color:var(--ink-soft);}
+  .field-label{font-size:18px; font-weight:600; color:var(--ink-soft);}
+  .region-chips{display:flex; flex-wrap:wrap; gap:10px;}
+  .region-chip{display:flex; align-items:center; gap:7px; padding:9px 16px; border-radius:999px; background:var(--chip-bg); font-size:16px;}
+
+  @media (orientation:landscape) and (min-width:680px){
+    .checkin-map-layout{flex-direction:row;}
+    .checkin-map-main{flex:1 1 68%;}
+    .checkin-header-compact{padding:16px 16px 6px;}
+    .map-title{font-size:21px;}
+    .checkin-map-side{flex:0 0 32%; max-width:340px; box-shadow:none; border-left:1px solid var(--line); justify-content:flex-start; padding:24px 22px;}
+    .checkin-map-side .region-chips{flex:1; min-height:0; overflow:auto; align-content:flex-start;}
+    .checkin-map-side .btn-primary{margin-top:auto;}
+  }
+
+  .resumo-card{background:var(--staff-card); border:1px solid var(--staff-border); border-radius:16px; padding:20px 22px;}
+  .resumo-card-label{font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--staff-text-soft); font-weight:600;}
+  .resumo-card-primary{border-left:6px solid var(--gold); padding-left:19px;}
+  .resumo-intensidade-value{font-family:var(--serif); font-size:64px; line-height:1; color:var(--gold); margin-top:8px; display:flex; align-items:baseline; gap:8px;}
+  .resumo-intensidade-value .resumo-intensidade-max{font-family:var(--sans); font-size:18px; font-weight:500; color:var(--staff-text-soft);}
+  .resumo-card-primary.sev-high{border-left-color:var(--danger);}
+  .resumo-card-primary.sev-high .resumo-intensidade-value{color:var(--staff-warn);}
+  .resumo-card-primary.sev-low{border-left-color:var(--success);}
+  .resumo-card-primary.sev-low .resumo-intensidade-value{color:var(--success);}
+  #resumoRegioesChips .region-chip{background:var(--staff-border); color:var(--staff-text);}
+  #resumoRegioesChips .region-chip .dot{background:var(--gold);}
+  .region-chip .dot{width:9px; height:9px; border-radius:50%; background:var(--accent-dark);}
+  .checkin-footer{flex-shrink:0; padding:16px 24px calc(18px + env(safe-area-inset-bottom)); background:var(--bg); box-shadow:0 -2px 8px rgba(94,68,59,0.06);}
+  .checkin-footer .btn-primary{margin-top:0; width:100%;}
+  .checkin-map-side .btn-primary{margin-top:0; width:100%;}
+  .view-toggle{display:flex; background:var(--chip-bg); border-radius:999px; padding:5px; flex-shrink:0;}
+  .view-toggle button{border:none; padding:14px 26px; min-height:52px; border-radius:999px; font-size:17px; font-weight:600; cursor:pointer; font-family:inherit; background:transparent; color:var(--ink-soft);}
+  .view-toggle button.active{background:var(--accent); color:#fff;}
+  .region-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .opt-btn{padding:18px 20px; min-height:60px; border-radius:14px; border:1px solid var(--line); background:var(--surface); text-align:left; font-family:var(--sans); font-size:17px; color:var(--ink); cursor:pointer;}
+  .opt-btn.selected{background:var(--accent); border-color:var(--accent); color:#fff;}
+  textarea.nc-input-light{padding:16px 18px; border-radius:12px; border:1px solid var(--line); background:var(--surface); color:var(--ink); font-family:var(--sans); font-size:17px;}
+
+  /* ---- Intensidade (tela própria) ---- */
+  #screen-intensity{padding:0; flex-direction:column;}
+  .intensity-header{flex-shrink:0; padding:24px 24px 8px; display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center;}
+  .intensity-scroll{flex:1; min-height:0; overflow:auto; padding:12px 24px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;}
+  .intensity-grid{display:flex; flex-wrap:wrap; justify-content:center; gap:14px; width:100%; max-width:620px;}
+  .intensity-btn{width:74px; height:74px; flex:0 0 auto; border-radius:20px; border:2px solid var(--line); background:var(--surface); font-family:var(--serif); font-size:28px; color:var(--ink); cursor:pointer; display:flex; align-items:center; justify-content:center;}
+  .intensity-btn.selected{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .intensity-scale-labels{display:flex; justify-content:space-between; width:100%; max-width:620px; font-size:15px; color:var(--ink-soft);}
+
+  /* ---- Signature ---- */
+  #screen-signature{align-items:center; justify-content:center; gap:22px; padding:40px;}
+  .sig-title{font-family:var(--serif); font-size:32px; font-weight:500;}
+  .sig-box{width:640px; max-width:82vw; height:240px; background:var(--surface); border:1.5px dashed var(--line); border-radius:16px; position:relative;}
+  #sigCanvas{width:100%; height:100%; touch-action:none; cursor:crosshair; border-radius:16px;}
+  .sig-actions{display:flex; gap:16px;}
+  .btn-ghost{padding:16px 30px; min-height:58px; border-radius:999px; border:1px solid var(--line); background:transparent; color:var(--ink); font-size:17px; font-weight:600; cursor:pointer; font-family:inherit;}
+  .btn-confirm{padding:16px 38px; min-height:58px; border-radius:999px; border:none; background:var(--line); color:var(--surface-2); font-size:17px; font-weight:600; cursor:pointer; font-family:inherit;}
+  .btn-confirm.ready{background:var(--accent);}
+
+  /* ---- Confirm ---- */
+  #screen-confirm{align-items:center; justify-content:center; gap:16px; padding:40px; text-align:center;}
+  .done-mark{width:72px; height:72px; border-radius:50%; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-size:34px;}
+  .done-title{font-family:var(--serif); font-size:36px; font-weight:500;}
+  .done-sub{font-size:19px; color:var(--ink-soft);}
+  .note-toggle{margin-top:8px; border:none; background:none; color:var(--ink-soft); font-size:13px; text-decoration:underline; cursor:pointer; font-family:inherit;}
+  .note-box{width:360px; max-width:80vw; height:70px; margin-top:8px; padding:12px; border-radius:12px; border:1px solid var(--line); font-family:var(--sans); font-size:13px; resize:none;}
+  .error-msg{background:var(--danger-soft); color:var(--accent-dark); border-radius:12px; padding:10px 16px; font-size:13px;}
+</style>
+</head>
+<body>
+
+<!-- Tela 0a: PIN -->
+<div class="screen active" id="screen-staff">
+  <img src="assets/logo-simbolo.png" alt="Mônica Souza" width="52" height="52" style="margin-bottom:4px;">
+  <div>
+    <div class="staff-label">Acesso da equipe</div>
+    <div class="staff-title">Digite o PIN</div>
+  </div>
+  <div class="pin-dots" id="pinDots">
+    <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+  </div>
+  <div class="pin-error" id="pinError"></div>
+  <div class="pin-pad" id="pinPad">
+    <button>1</button><button>2</button><button>3</button>
+    <button>4</button><button>5</button><button>6</button>
+    <button>7</button><button>8</button><button>9</button>
+    <button class="empty"></button><button>0</button><button>&#9003;</button>
+  </div>
+  <button id="btnFullscreen" style="margin-top:6px; border:none; background:none; color:var(--staff-text-soft); font-size:12px; text-decoration:underline; cursor:pointer; font-family:inherit;">Ativar tela cheia</button>
+</div>
+
+<!-- Tela 0b: lista interna -->
+<div class="screen" id="screen-list" style="padding:0; align-items:stretch;">
+  <div style="padding:26px 32px 10px; flex-shrink:0;">
+    <div class="list-eyebrow">Painel interno &middot; não mostrar à cliente</div>
+    <div class="list-title">Minhas clientes</div>
+    <input type="text" id="clientSearch" class="nc-input" placeholder="🔍 Buscar cliente..." style="width:100%; margin-top:12px; box-sizing:border-box;">
+  </div>
+  <div style="flex:1; overflow:auto; padding:8px 32px 20px;">
+    <div class="loading-msg" id="loadingMsg" style="display:none;">Carregando clientes...</div>
+    <div class="client-rows" id="clientRows"></div>
+  </div>
+  <div style="display:flex; gap:10px; padding:14px 32px calc(16px + env(safe-area-inset-bottom)); flex-shrink:0; background:var(--staff-bg); box-shadow:0 -2px 8px rgba(94,68,59,0.06);">
+    <button class="btn-ghost" id="btnNewClient" style="border-color:var(--staff-border); color:var(--staff-text);">+ Nova cliente</button>
+    <button class="btn-ghost" id="btnNewPlano" style="border-color:var(--staff-border); color:var(--staff-text);">+ Novo plano</button>
+  </div>
+</div>
+
+<!-- Tela 0c: cadastro de cliente nova -->
+<div class="screen" id="screen-newclient" style="background:var(--staff-bg); color:var(--staff-text); padding:40px 48px;">
+  <div class="list-eyebrow">Painel interno &middot; não mostrar à cliente</div>
+  <div class="list-title">Nova cliente</div>
+  <div class="newclient-form">
+    <label class="nc-label">Nome completo</label>
+    <input type="text" id="ncNome" class="nc-input" placeholder="Nome da cliente">
+    <div class="nc-label" style="margin-top:14px; line-height:1.5;">Depois de salvar, use "+ Novo plano" na lista para dar a ela um plano de sessões.</div>
+    <div class="error-msg" id="ncError" style="display:none;"></div>
+  </div>
+  <div style="display:flex; gap:14px; margin-top:auto;">
+    <button class="btn-ghost" id="btnCancelNewClient" style="border-color:var(--staff-border); color:var(--staff-text);">Cancelar</button>
+    <button class="btn-primary" id="btnSaveNewClient" style="flex:1;">Salvar cliente</button>
+  </div>
+</div>
+
+<!-- Tela 0d: novo plano para cliente existente -->
+<div class="screen" id="screen-newplano" style="background:var(--staff-bg); color:var(--staff-text); padding:40px 48px;">
+  <div class="list-eyebrow">Painel interno &middot; não mostrar à cliente</div>
+  <div class="list-title">Novo plano</div>
+  <div class="newclient-form">
+    <label class="nc-label">Cliente</label>
+    <select id="npCliente" class="nc-input">
+      <option value="">Selecione...</option>
+    </select>
+
+    <label class="nc-label">Tipo de plano</label>
+    <div class="view-toggle" id="npTipoToggle">
+      <button data-tipo="terapeutico" class="active">Terapêutico</button>
+      <button data-tipo="drenagem">Drenagem</button>
+    </div>
+
+    <label class="nc-label">Total de sessões do plano</label>
+    <input type="number" id="npTotalSessoes" class="nc-input" placeholder="Ex: 8" min="1">
+
+    <label class="nc-label">Validade do plano</label>
+    <input type="date" id="npValidade" class="nc-input">
+
+    <label class="nc-label">Valor total do plano (R$)</label>
+    <input type="number" id="npValorTotal" class="nc-input" placeholder="Ex: 720" min="0" step="0.01">
+
+    <label class="nc-label">Status de pagamento</label>
+    <select id="npPagamento" class="nc-input">
+      <option value="integral">Pago integralmente</option>
+      <option value="parcial">Pago parcialmente</option>
+      <option value="pendente">Pendente</option>
+    </select>
+
+    <div id="npValorPagoWrap" style="display:none;">
+      <label class="nc-label">Valor já pago (R$)</label>
+      <input type="number" id="npValorPago" class="nc-input" placeholder="Ex: 300" min="0" step="0.01">
+    </div>
+
+    <label class="nc-label">Data do pagamento (opcional)</label>
+    <input type="date" id="npDataPagamento" class="nc-input">
+
+    <div class="error-msg" id="npError" style="display:none;"></div>
+  </div>
+  <div style="display:flex; gap:14px; margin-top:auto;">
+    <button class="btn-ghost" id="btnCancelNewPlano" style="border-color:var(--staff-border); color:var(--staff-text);">Cancelar</button>
+    <button class="btn-primary" id="btnSaveNewPlano" style="flex:1;">Salvar plano</button>
+  </div>
+</div>
+
+<!-- Tela: preparação para o atendimento (uso interno, entre a lista e o check-in) -->
+<div class="screen" id="screen-preparacao" style="background:var(--staff-bg); color:var(--staff-text); padding:0; align-items:stretch;">
+  <div style="padding:26px 32px 6px; flex-shrink:0;">
+    <div class="list-eyebrow">Painel interno &middot; preparação para o atendimento</div>
+    <div class="list-title" id="prepNome" style="font-size:24px;">Cliente</div>
+  </div>
+
+  <div style="flex:1; overflow:auto; padding:10px 32px 20px; display:flex; flex-direction:column; gap:14px;">
+
+    <!-- Primeira sessão -->
+    <div id="prepPrimeiraSessao" style="display:none;">
+      <div class="resumo-card">
+        <div class="resumo-card-label">Primeira sessão</div>
+        <div style="font-family:var(--serif); font-size:22px; margin-top:6px;" id="prepPlanoPrimeira">Plano</div>
+      </div>
+      <div class="resumo-card" id="prepObjetivoCard" style="margin-top:14px; display:none;">
+        <div class="resumo-card-label">Objetivo principal</div>
+        <div style="font-size:16px; margin-top:6px;" id="prepObjetivoTexto"></div>
+      </div>
+    </div>
+
+    <!-- Cliente com histórico -->
+    <div id="prepHistorico" style="display:none;">
+
+      <div class="observacao-ativa-card" id="prepObservarCard" style="display:none;">
+        <div class="resumo-card-label">👀 Quero observar hoje</div>
+        <div class="observacao-ativa-texto" id="prepObservarTexto"></div>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-bottom:14px;">
+        <div class="resumo-card" style="flex:1; padding:14px 16px;">
+          <div class="resumo-card-label">Evolução</div>
+          <div style="font-family:var(--serif); font-size:19px; margin-top:4px;" id="prepEvolucao">—</div>
+        </div>
+        <div class="resumo-card" style="flex:1; padding:14px 16px;">
+          <div class="resumo-card-label">Plano</div>
+          <div style="font-family:var(--serif); font-size:19px; margin-top:4px;" id="prepPlano">—</div>
+        </div>
+        <div class="resumo-card" style="flex:1; padding:14px 16px;">
+          <div class="resumo-card-label">Financeiro</div>
+          <div style="font-size:19px; margin-top:4px;" id="prepFinanceiro">—</div>
+        </div>
+      </div>
+
+      <div class="resumo-card" style="margin-bottom:14px;">
+        <div class="resumo-card-label">Sessão anterior</div>
+        <div style="font-size:16px; margin-top:6px;" id="prepUltimaSessao">—</div>
+      </div>
+
+      <div class="resumo-card" style="margin-bottom:14px;" id="prepRegioesCard">
+        <div class="resumo-card-label">Principais regiões</div>
+        <div class="region-chips" id="prepRegioesChips" style="margin-top:8px;"></div>
+      </div>
+
+      <div class="resumo-card" style="margin-bottom:14px;" id="prepContextoCard">
+        <div class="resumo-card-label">Contexto da última sessão</div>
+        <div class="region-chips" id="prepContextoChips" style="margin-top:8px;"></div>
+      </div>
+
+      <div class="resumo-card" style="margin-bottom:14px;" id="prepAtencaoCard">
+        <div class="resumo-card-label">O que observei</div>
+        <div class="region-chips" id="prepAtencaoChips" style="margin-top:8px;"></div>
+      </div>
+
+      <div class="resumo-card" id="prepPadroesCard" style="display:none;">
+        <div class="resumo-card-label">🧠 Padrões observados</div>
+        <div id="prepPadroesLista" style="font-size:15px; margin-top:8px; line-height:1.7;"></div>
+      </div>
+
+    </div>
+
+    <div class="loading-msg-light" id="prepLoading">Carregando...</div>
+  </div>
+
+  <div style="padding:16px 32px calc(18px + env(safe-area-inset-bottom)); flex-shrink:0; background:var(--staff-bg); box-shadow:0 -2px 8px rgba(94,68,59,0.06);">
+    <button class="btn-primary" id="btnIniciarCheckin">Iniciar check-in</button>
+  </div>
+</div>
+
+<!-- Tela 1: boas-vindas -->
+<div class="screen" id="screen-welcome">
+  <img src="assets/logo-simbolo.png" alt="Mônica Souza" width="36" height="36" style="margin-bottom:6px;">
+  <div class="eyebrow">Bem-vinda</div>
+  <div class="greeting" id="greetName">&nbsp;</div>
+  <div class="plan-sub" id="planSub">&nbsp;</div>
+  <div class="gentle-note" id="gentleNote"></div>
+  <button class="btn-primary" id="btnStartCheckin">Iniciar</button>
+  <button class="note-toggle" id="btnViewHistory">Ver meu progresso</button>
+</div>
+
+<!-- Tela: progresso da cliente -->
+<div class="screen" id="screen-history" style="padding:36px 32px; align-items:stretch;">
+  <div class="eyebrow" style="text-align:center;">Seu progresso</div>
+  <div class="greeting" id="historyName" style="font-size:26px; text-align:center; margin-bottom:6px;">&nbsp;</div>
+  <div class="history-card" id="historyFinanceiro" style="margin-bottom:6px;"></div>
+  <div class="loading-msg-light" id="historyLoading">Carregando...</div>
+  <div class="history-list" id="historyList"></div>
+  <button class="btn-ghost" id="btnBackFromHistory" style="margin-top:16px; align-self:center;">Voltar</button>
+</div>
+
+<!-- Tela: última sessão do plano (cliente, cerimonial) -->
+<div class="screen" id="screen-ultima-sessao" style="align-items:center; justify-content:center; gap:16px; padding:40px; text-align:center;">
+  <div style="font-size:40px;">✨</div>
+  <div class="greeting" style="font-size:34px;">Última sessão do seu plano</div>
+  <div class="gentle-note" style="font-size:19px; max-width:440px;">Hoje você conclui este ciclo de cuidados.</div>
+
+  <div class="resumo-card" style="margin-top:10px; text-align:left; width:100%; max-width:420px;">
+    <div class="resumo-card-label" id="ultimaSessaoPlano">Plano</div>
+    <div style="font-family:var(--serif); font-size:22px; margin-top:4px;" id="ultimaSessaoContagem">Sessão 4 de 4</div>
+  </div>
+
+  <div class="resumo-card" id="ultimaSessaoPendenteCard" style="display:none; margin-top:4px; text-align:left; width:100%; max-width:420px; border-left:5px solid var(--danger);">
+    <div class="resumo-card-label" style="color:var(--accent-dark);">⚠️ Pagamento pendente</div>
+    <div style="font-size:15px; margin-top:6px; line-height:1.5;">Identificamos que este plano ainda possui um pagamento pendente. Após o atendimento, caso deseje, você poderá realizar o pagamento.</div>
+  </div>
+
+  <div class="resumo-card" id="ultimaSessaoParcialCard" style="display:none; margin-top:4px; text-align:left; width:100%; max-width:420px; border-left:5px solid var(--warning);">
+    <div class="resumo-card-label" style="color:var(--accent-dark);">⚠️ Pagamento parcialmente realizado</div>
+    <div style="font-size:15px; margin-top:6px;" id="ultimaSessaoValorRestante">Valor restante: R$ 0,00</div>
+  </div>
+
+  <button class="btn-primary" id="btnContinuarUltimaSessao" style="margin-top:16px;">Continuar check-in</button>
+</div>
+
+<!-- Tela 2a: intensidade (botões grandes, numerados) -->
+<div class="screen" id="screen-intensity" style="padding:0;">
+  <div class="intensity-header">
+    <img src="assets/logo-simbolo.png" alt="Mônica Souza" width="28" height="28">
+    <div class="map-title" id="intensityTitle">Como está sua dor hoje?</div>
+  </div>
+  <div class="intensity-scroll">
+    <div class="intensity-grid" id="intensityGrid"></div>
+    <div class="intensity-scale-labels"><span id="intensityLabelMin">Nenhuma</span><span id="intensityLabelMax">Muito forte</span></div>
+  </div>
+  <div class="checkin-footer">
+    <button class="btn-primary" id="btnToRegions">Continuar</button>
+  </div>
+</div>
+
+<!-- Tela 2b: mapa corporal (toque para marcar regiões) -->
+<div class="screen" id="screen-checkin" style="padding:0;">
+  <div class="checkin-map-layout" id="checkinMapLayout">
+    <div class="checkin-map-main">
+      <div class="checkin-header-compact">
+        <div class="map-title" id="mapTitle">Onde você sente dor hoje?</div>
+        <div class="view-toggle">
+          <button id="btnViewBack" class="active">Costas</button>
+          <button id="btnViewFront">Frente</button>
+        </div>
+      </div>
+      <div class="body-map-container" id="bodyMapContainer"></div>
+    </div>
+    <div class="checkin-map-side">
+      <div class="field-label">Regiões marcadas</div>
+      <div class="region-chips" id="checkinSelectedChips">
+        <span class="checkin-side-hint" id="checkinSideHint">Toque no desenho para marcar</span>
+      </div>
+      <button class="btn-primary" id="btnToSignature">Continuar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Tela 3: assinatura -->
+<div class="screen" id="screen-signature">
+  <div class="sig-title">Assine para confirmar sua presença</div>
+  <div class="sig-box">
+    <canvas id="sigCanvas"></canvas>
+  </div>
+  <div class="sig-actions">
+    <button class="btn-ghost" id="btnClearSig">Limpar</button>
+    <button class="btn-confirm" id="btnConfirmSig">Confirmar</button>
+  </div>
+  <div class="error-msg" id="submitError" style="display:none;"></div>
+</div>
+
+<!-- Tela final -->
+<div class="screen" id="screen-confirm">
+  <div class="done-mark">&#10003;</div>
+  <div class="done-title">Sessão registrada</div>
+  <div class="done-sub" id="confirmSub"></div>
+  <button class="note-toggle" id="btnOpenNote">+ Adicionar nota privada</button>
+  <textarea class="note-box" id="noteBox" placeholder="Nota privada — só você vê" style="display:none;"></textarea>
+  <button class="btn-primary" id="btnFinish">Concluir</button>
+</div>
+
+<!-- Tela: resumo do check-in (uso interno, referência durante o atendimento) -->
+<div class="screen" id="screen-resumo" style="background:var(--staff-bg); color:var(--staff-text); padding:0; align-items:stretch;">
+  <div style="padding:30px 32px 6px; flex-shrink:0;">
+    <div class="list-eyebrow">Painel interno &middot; referência durante o atendimento</div>
+    <div class="list-title" id="resumoTitulo" style="font-size:24px;">Resumo do check-in</div>
+  </div>
+  <div style="flex:1; overflow:auto; padding:10px 32px 20px; display:flex; flex-direction:column; gap:16px;">
+    <div class="observacao-ativa-card" id="observacaoAtivaCard" style="display:none;">
+      <div class="resumo-card-label">⭐ Acompanhando desde a última sessão</div>
+      <div class="observacao-ativa-texto" id="observacaoAtivaTexto"></div>
+      <div class="observacao-ativa-data" id="observacaoAtivaData"></div>
+    </div>
+    <div class="resumo-card resumo-card-primary" id="resumoIntensidadeCard">
+      <div class="resumo-card-label" id="resumoIntensidadeLabel">Intensidade da dor</div>
+      <div class="resumo-intensidade-value"><span id="resumoIntensidade">–</span><span class="resumo-intensidade-max">/ 10</span></div>
+    </div>
+
+    <div class="resumo-card">
+      <div class="resumo-card-label">Regiões marcadas</div>
+      <div class="region-chips" id="resumoRegioesChips" style="margin-top:10px;"></div>
+    </div>
+  </div>
+  <div style="padding:14px 32px calc(16px + env(safe-area-inset-bottom)); flex-shrink:0;">
+    <button class="btn-primary" id="btnResumoAction">Iniciar atendimento</button>
+  </div>
+</div>
+
+<!-- Tela: registro rápido pós-atendimento (uso interno) -->
+<div class="screen" id="screen-registro" style="background:var(--staff-bg); color:var(--staff-text); padding:32px 36px; align-items:stretch;">
+  <div class="list-eyebrow">Painel interno &middot; registro rápido</div>
+  <div class="list-title" id="registroTitulo" style="font-size:22px;">Registro da sessão</div>
+  <div class="registro-scroll">
+
+    <div class="registro-section-label">Como a cliente chegou?</div>
+    <div class="emoji-btn-row" id="regChegada"></div>
+
+    <div class="registro-section-label">Contexto do dia</div>
+    <div class="chip-select-grid" id="regContexto"></div>
+
+    <div class="registro-section-label">O que foi realizado?</div>
+    <div class="chip-select-grid" id="regRealizado"></div>
+
+    <div class="registro-section-label">Pressão utilizada</div>
+    <div class="chip-select-grid" id="regPressao"></div>
+    <input type="text" id="regPressaoCustom" class="nc-input" style="display:none; margin-top:8px;" placeholder="Descreva a pressão personalizada">
+
+    <div class="registro-section-label">Como saiu?</div>
+    <div class="emoji-btn-row" id="regSaida"></div>
+
+    <div class="registro-section-label">🔎 O que chamou minha atenção hoje?</div>
+    <div class="chip-select-grid" id="regAtencao"></div>
+
+    <div class="registro-section-label">👀 Na próxima sessão quero observar...</div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <input type="text" id="regObservarTexto" class="nc-input" style="flex:1;" placeholder="Ex: observar relação com TPM" maxlength="120">
+      <button id="btnAcompanhar" class="acompanhar-btn" title="Acompanhar na próxima sessão">⭐</button>
+    </div>
+
+    <div class="registro-section-label">Insight da cliente (opcional)</div>
+    <input type="text" id="regInsightCliente" class="nc-input" placeholder='Ex: "Dormi muito melhor"' maxlength="140">
+
+  </div>
+  <button class="btn-primary" id="btnSaveRegistro" style="margin-top:14px;">Salvar e voltar para a lista</button>
+</div>
+
+<!-- Tela: ficha clínica + histórico completo (uso interno) -->
+<div class="screen" id="screen-ficha" style="background:var(--staff-bg); color:var(--staff-text); padding:36px 40px; align-items:stretch;">
+  <div class="list-eyebrow">Painel interno &middot; não mostrar à cliente</div>
+  <div class="list-title" id="fichaTitulo" style="font-size:22px;">Ficha clínica</div>
+
+  <div style="margin:14px 0;">
+    <button class="btn-primary" id="btnIniciarAtendimentoFicha" style="display:none; width:100%; margin-top:0;">Iniciar atendimento</button>
+    <button class="btn-primary" id="btnCriarNovoPlanoFicha" style="display:none; width:100%; margin-top:0;">+ Criar novo plano</button>
+  </div>
+
+  <div class="newclient-form" style="overflow:auto; flex:1;">
+
+    <div class="list-title" style="font-size:18px;">Planos</div>
+    <div id="fichaPlanos" style="display:flex; flex-direction:column; gap:10px; margin-top:8px; margin-bottom:20px;"></div>
+
+    <div class="list-title" style="font-size:18px;">Dados cadastrais</div>
+    <label class="nc-label">Profissão</label>
+    <input type="text" id="fcProfissao" class="nc-input">
+    <label class="nc-label">Idade</label>
+    <input type="number" id="fcIdade" class="nc-input">
+    <label class="nc-label">Telefone</label>
+    <input type="text" id="fcTelefone" class="nc-input">
+    <label class="nc-label">Objetivo principal</label>
+    <textarea id="fcObjetivo" class="nc-input" style="height:48px;"></textarea>
+    <label class="nc-label">Queixa principal</label>
+    <textarea id="fcQueixa" class="nc-input" style="height:48px;"></textarea>
+    <label class="nc-label">Histórico de lesões</label>
+    <textarea id="fcLesoes" class="nc-input" style="height:48px;"></textarea>
+    <label class="nc-label">Cirurgias</label>
+    <textarea id="fcCirurgias" class="nc-input" style="height:48px;"></textarea>
+    <label class="nc-label">Doenças</label>
+    <textarea id="fcDoencas" class="nc-input" style="height:48px;"></textarea>
+    <label class="nc-label">Medicamentos</label>
+    <textarea id="fcMedicamentos" class="nc-input" style="height:48px;"></textarea>
+    <label class="nc-label">Alergias</label>
+    <textarea id="fcAlergias" class="nc-input" style="height:48px;"></textarea>
+    <label class="nc-label">Atividades físicas</label>
+    <textarea id="fcAtividades" class="nc-input" style="height:48px;"></textarea>
+    <label class="nc-label">Restrições</label>
+    <textarea id="fcRestricoes" class="nc-input" style="height:48px;"></textarea>
+    <label class="nc-label">Observações gerais</label>
+    <textarea id="fcObservacoes" class="nc-input" style="height:48px;"></textarea>
+
+    <button class="btn-primary" id="btnSaveFicha" style="margin-top:14px;">Salvar ficha</button>
+
+    <div class="list-title" style="font-size:18px; margin-top:26px;">Histórico completo</div>
+    <div id="fichaHistorico" style="display:flex; flex-direction:column; gap:10px; margin-top:8px;"></div>
+  </div>
+  <button class="btn-ghost" id="btnCloseFicha" style="border-color:var(--staff-border); color:var(--staff-text); margin-top:14px;">Voltar para a lista</button>
+</div>
+
+<script>
+// ===== CONFIGURAÇÃO =====
+const API_URL = 'https://script.google.com/macros/s/AKfycbwDtzU27MYf1QOlT0SzHfoSP5sIOWMUFmlSXig8XlVS1C_LsprZ8hUmMqeJ5Ydk-u89/exec';
+
+const REGION_DEFS_FRONT = [
+  { key: 'F_cervical', label: 'Cervical', d: 'M107.3,193.0 L141.5,193.0 L135.9,211.1 L113.0,211.1 Z' },
+  { key: 'F_trapD', label: 'Trapézio direito', d: 'M107.3,193.0 L75.8,196.2 Q44.4,204.5 32.9,222.6 L72.9,229.1 Q90.0,212.7 113.0,211.1 Z' },
+  { key: 'F_trapE', label: 'Trapézio esquerdo', d: 'M141.5,193.0 L173.1,196.2 Q204.5,204.5 215.9,222.6 L175.9,229.1 Q158.8,212.7 135.9,211.1 Z' },
+  { key: 'F_ombroD', label: 'Ombro direito', d: 'M32.9,222.6 Q21.5,242.3 29.9,260.3 L70.1,257.1 Q64.3,239.0 72.9,229.1 Z' },
+  { key: 'F_ombroE', label: 'Ombro esquerdo', d: 'M215.9,222.6 Q227.4,242.3 218.9,260.3 L178.7,257.1 Q184.5,239.0 175.9,229.1 Z' },
+  { key: 'F_peitoralD', label: 'Peitoral direito', d: 'M72.9,229.1 L64.3,257.1 Q58.7,286.7 81.6,299.8 L121.6,296.5 L121.6,219.2 Q92.9,221.0 72.9,229.1 Z' },
+  { key: 'F_peitoralE', label: 'Peitoral esquerdo', d: 'M175.9,229.1 L184.5,257.1 Q190.2,286.7 167.3,299.8 L127.2,296.5 L127.2,219.2 Q156.0,221.0 175.9,229.1 Z' },
+  { key: 'F_bracoD', label: 'Braço direito', d: 'M29.9,260.3 L70.1,257.1 L61.5,327.8 L21.5,331.1 Z' },
+  { key: 'F_bracoE', label: 'Braço esquerdo', d: 'M218.9,260.3 L178.7,257.1 L187.3,327.8 L227.4,331.1 Z' },
+  { key: 'F_antebracoD', label: 'Antebraço direito', d: 'M21.5,331.1 L61.5,327.8 L52.8,392.0 L15.7,395.2 Z' },
+  { key: 'F_antebracoE', label: 'Antebraço esquerdo', d: 'M227.4,331.1 L187.3,327.8 L196.0,392.0 L233.2,395.2 Z' },
+  { key: 'F_punhoD', label: 'Punho direito', d: 'M15.7,395.2 L52.8,392.0 L47.2,419.9 L10.0,423.2 Z' },
+  { key: 'F_punhoE', label: 'Punho esquerdo', d: 'M233.2,395.2 L196.0,392.0 L198.8,419.9 L236.0,423.2 Z' },
+  { key: 'F_abdomen', label: 'Abdômen', d: 'M81.6,299.8 L121.6,296.5 L127.2,296.5 L167.3,299.8 Q178.7,321.2 164.4,342.7 L121.6,349.2 L84.4,342.7 Q70.1,321.2 81.6,299.8 Z' },
+  { key: 'F_quadrilD', label: 'Quadril direito', d: 'M84.4,342.7 L121.6,349.2 L118.8,373.8 L70.1,377.1 Q58.7,360.7 67.1,347.5 Z' },
+  { key: 'F_quadrilE', label: 'Quadril esquerdo', d: 'M164.4,342.7 L127.2,349.2 L130.1,373.8 L178.7,377.1 Q190.2,360.7 181.7,347.5 Z' },
+  { key: 'F_coxaAntD', label: 'Coxa anterior direita', d: 'M70.1,377.1 L118.8,373.8 L110.1,484.0 L61.5,485.6 Z' },
+  { key: 'F_coxaAntE', label: 'Coxa anterior esquerda', d: 'M178.7,377.1 L130.1,373.8 L138.7,484.0 L187.3,485.6 Z' },
+  { key: 'F_joelhoD', label: 'Joelho direito', d: 'M61.5,485.6 L110.1,484.0 L107.3,510.3 L64.3,511.9 Z' },
+  { key: 'F_joelhoE', label: 'Joelho esquerdo', d: 'M187.3,485.6 L138.7,484.0 L141.5,510.3 L184.5,511.9 Z' },
+  { key: 'F_panturrilhaD', label: 'Panturrilha direita', d: 'M64.3,511.9 L107.3,510.3 L98.7,607.3 L72.9,609.0 Z' },
+  { key: 'F_panturrilhaE', label: 'Panturrilha esquerda', d: 'M184.5,511.9 L141.5,510.3 L150.2,607.3 L175.9,609.0 Z' },
+  { key: 'F_tornozeloD', label: 'Tornozelo direito', d: 'M72.9,609.0 L98.7,607.3 L95.8,625.4 L75.8,627.1 Z' },
+  { key: 'F_tornozeloE', label: 'Tornozelo esquerdo', d: 'M175.9,609.0 L150.2,607.3 L153.0,625.4 L173.1,627.1 Z' },
+  { key: 'F_peD', label: 'Pé direito', d: 'M75.8,627.1 L95.8,625.4 L107.3,646.8 L81.6,653.3 L55.7,648.4 Z' },
+  { key: 'F_peE', label: 'Pé esquerdo', d: 'M173.1,627.1 L153.0,625.4 L141.5,646.8 L167.3,653.3 L193.2,648.4 Z' },
+];
+
+const REGION_DEFS_BACK = [
+  { key: 'B_cervical', label: 'Cervical', d: 'M87.0,193.0 L117.6,193.0 L112.5,211.0 L92.0,211.0 Z' },
+  { key: 'B_trapD', label: 'Trapézio direito', d: 'M87.0,193.0 L58.8,196.2 Q30.7,204.4 20.5,222.4 L56.3,228.9 Q71.5,212.6 92.0,211.0 Z' },
+  { key: 'B_trapE', label: 'Trapézio esquerdo', d: 'M117.6,193.0 L145.7,196.2 Q173.8,204.4 184.0,222.4 L148.3,228.9 Q133.0,212.6 112.5,211.0 Z' },
+  { key: 'B_ombroD', label: 'Ombro direito', d: 'M20.5,222.4 Q10.2,241.9 17.8,259.9 L53.7,256.6 Q48.5,238.7 56.3,228.9 Z' },
+  { key: 'B_ombroE', label: 'Ombro esquerdo', d: 'M184.0,222.4 Q194.3,241.9 186.7,259.9 L150.8,256.6 Q156.0,238.7 148.3,228.9 Z' },
+  { key: 'B_costasSup', label: 'Costas superiores', d: 'M56.3,228.9 L148.3,228.9 Q150.8,261.6 138.0,279.5 L66.5,279.5 Q53.7,261.6 56.3,228.9 Z' },
+  { key: 'B_costasMed', label: 'Costas médias', d: 'M66.5,279.5 L138.0,279.5 Q143.2,299.1 133.0,312.1 L71.5,312.1 Q61.3,299.1 66.5,279.5 Z' },
+  { key: 'B_bracoD', label: 'Braço direito', d: 'M17.8,259.9 L53.7,256.6 L46.0,326.8 L10.2,330.1 Z' },
+  { key: 'B_bracoE', label: 'Braço esquerdo', d: 'M186.7,259.9 L150.8,256.6 L158.5,326.8 L194.3,330.1 Z' },
+  { key: 'B_antebracoD', label: 'Antebraço direito', d: 'M10.2,330.1 L46.0,326.8 L38.3,390.5 L5.1,393.7 Z' },
+  { key: 'B_antebracoE', label: 'Antebraço esquerdo', d: 'M194.3,330.1 L158.5,326.8 L166.2,390.5 L199.5,393.7 Z' },
+  { key: 'B_punhoD', label: 'Punho direito', d: 'M5.1,393.7 L38.3,390.5 L33.2,418.2 L0.0,421.5 Z' },
+  { key: 'B_punhoE', label: 'Punho esquerdo', d: 'M199.5,393.7 L166.2,390.5 L168.8,418.2 L202.0,421.5 Z' },
+  { key: 'B_lombar', label: 'Lombar', d: 'M71.5,312.1 L133.0,312.1 Q138.0,331.7 127.8,341.6 L76.7,341.6 Q66.5,331.7 71.5,312.1 Z' },
+  { key: 'B_quadrilD', label: 'Quadril direito', d: 'M81.8,366.0 L53.7,375.8 Q46.0,387.2 53.7,400.3 L94.6,397.1 L89.5,372.6 Z' },
+  { key: 'B_quadrilE', label: 'Quadril esquerdo', d: 'M122.7,366.0 L150.8,375.8 Q158.5,387.2 150.8,400.3 L110.0,397.1 L115.0,372.6 Z' },
+  { key: 'B_gluteoD', label: 'Glúteo direito', d: 'M53.7,375.9 L94.6,372.7 L90.7,403.6 L48.5,406.9 Z' },
+  { key: 'B_gluteoE', label: 'Glúteo esquerdo', d: 'M150.8,375.9 L110.0,372.7 L113.8,403.6 L156.0,406.9 Z' },
+  { key: 'B_coxaPostD', label: 'Coxa posterior direita', d: 'M48.5,431.3 L90.7,428.0 L89.5,481.9 L46.0,483.6 Z' },
+  { key: 'B_coxaPostE', label: 'Coxa posterior esquerda', d: 'M156.0,431.3 L113.8,428.0 L115.0,481.9 L158.5,483.6 Z' },
+  { key: 'B_joelhoD', label: 'Joelho direito', d: 'M46.0,483.6 L89.5,481.9 L87.0,508.1 L48.5,509.7 Z' },
+  { key: 'B_joelhoE', label: 'Joelho esquerdo', d: 'M158.5,483.6 L115.0,481.9 L117.6,508.1 L156.0,509.7 Z' },
+  { key: 'B_panturrilhaD', label: 'Panturrilha direita', d: 'M48.5,509.7 L87.0,508.1 L79.3,604.3 L56.3,606.0 Z' },
+  { key: 'B_panturrilhaE', label: 'Panturrilha esquerda', d: 'M156.0,509.7 L117.6,508.1 L125.3,604.3 L148.3,606.0 Z' },
+  { key: 'B_tornozeloD', label: 'Tornozelo direito', d: 'M56.3,606.0 L79.3,604.3 L76.7,622.3 L58.8,624.0 Z' },
+  { key: 'B_tornozeloE', label: 'Tornozelo esquerdo', d: 'M148.3,606.0 L125.3,604.3 L127.8,622.3 L145.7,624.0 Z' },
+  { key: 'B_peD', label: 'Pé direito', d: 'M58.8,624.0 L76.7,622.3 L87.0,643.5 L64.0,650.0 L40.8,645.2 Z' },
+  { key: 'B_peE', label: 'Pé esquerdo', d: 'M145.7,624.0 L127.8,622.3 L117.6,643.5 L140.6,650.0 L163.7,645.2 Z' },
+];
+
+const EDEMA_FRONT = [
+  { key: 'EF_face', label: 'Face', d: 'M112.8,211.6 Q142.0,193.0 171.2,211.6 Q171.2,240.5 142.0,249.1 Q112.8,240.5 112.8,211.6 Z' },
+  { key: 'EF_pescoco', label: 'Pescoço', d: 'M126.1,252.0 L157.9,252.0 L152.6,267.8 L131.4,267.8 Z' },
+  { key: 'EF_bracoD', label: 'Braço direito', d: 'M54.5,311.0 L91.7,308.2 L83.7,370.0 L46.6,372.9 Z' },
+  { key: 'EF_bracoE', label: 'Braço esquerdo', d: 'M229.5,311.0 L192.3,308.2 L200.3,370.0 L237.4,372.9 Z' },
+  { key: 'EF_antebracoD', label: 'Antebraço direito', d: 'M46.6,372.9 L83.7,370.0 L70.5,450.6 L36.0,453.5 Z' },
+  { key: 'EF_antebracoE', label: 'Antebraço esquerdo', d: 'M237.4,372.9 L200.3,370.0 L213.5,450.6 L248.0,453.5 Z' },
+  { key: 'EF_abdSup', label: 'Abdômen superior', d: 'M94.3,283.7 L189.7,283.7 L181.7,345.5 L102.3,345.5 Z' },
+  { key: 'EF_abdInf', label: 'Abdômen inferior', d: 'M102.3,345.5 L181.7,345.5 Q192.3,364.3 179.1,383.0 L104.9,383.0 Q91.7,364.3 102.3,345.5 Z' },
+  { key: 'EF_quadris', label: 'Quadris / Flancos', d: 'M81.1,383.0 L202.9,383.0 Q210.9,400.3 197.7,413.2 L86.3,413.2 Q73.1,400.3 81.1,383.0 Z' },
+  { key: 'EF_coxaD', label: 'Coxa anterior direita', d: 'M91.7,413.2 L136.8,410.4 L128.8,506.7 L83.7,508.2 Z' },
+  { key: 'EF_coxaE', label: 'Coxa anterior esquerda', d: 'M192.3,413.2 L147.2,410.4 L155.2,506.7 L200.3,508.2 Z' },
+  { key: 'EF_joelhoD', label: 'Joelho direito', d: 'M83.7,508.2 L128.8,506.7 L126.1,529.8 L86.3,531.2 Z' },
+  { key: 'EF_joelhoE', label: 'Joelho esquerdo', d: 'M200.3,508.2 L155.2,506.7 L157.9,529.8 L197.7,531.2 Z' },
+  { key: 'EF_panturrilhaD', label: 'Panturrilha direita', d: 'M86.3,531.2 L126.1,529.8 L118.2,614.7 L94.3,616.1 Z' },
+  { key: 'EF_panturrilhaE', label: 'Panturrilha esquerda', d: 'M197.7,531.2 L157.9,529.8 L165.8,614.7 L189.7,616.1 Z' },
+  { key: 'EF_tornozeloD', label: 'Tornozelo direito', d: 'M94.3,616.1 L118.2,614.7 L115.5,630.6 L96.9,632.0 Z' },
+  { key: 'EF_tornozeloE', label: 'Tornozelo esquerdo', d: 'M189.7,616.1 L165.8,614.7 L168.5,630.6 L187.1,632.0 Z' },
+  { key: 'EF_peD', label: 'Pé direito', d: 'M96.9,632.0 L115.5,630.6 L126.1,649.2 L102.3,655.0 L78.3,650.7 Z' },
+  { key: 'EF_peE', label: 'Pé esquerdo', d: 'M187.1,632.0 L168.5,630.6 L157.9,649.2 L181.7,655.0 L205.7,650.7 Z' },
+];
+
+const EDEMA_BACK = [
+  { key: 'EB_costasSup', label: 'Costas superiores', d: 'M30.7,28.0 L181.3,28.0 Q185.4,85.0 164.5,116.3 L47.5,116.3 Q26.6,85.0 30.7,28.0 Z' },
+  { key: 'EB_costasInf', label: 'Costas inferiores', d: 'M47.5,116.3 L164.5,116.3 Q173.0,150.6 156.2,173.4 L55.8,173.4 Q39.0,150.6 47.5,116.3 Z' },
+  { key: 'EB_lombar', label: 'Lombar', d: 'M55.8,173.4 L156.2,173.4 Q164.5,218.9 139.5,267.5 L72.5,267.5 Q47.5,218.9 55.8,173.4 Z' },
+  { key: 'EB_flancoD', label: 'Flanco direito', d: 'M30.7,173.4 L55.8,173.4 Q47.5,218.9 55.8,241.8 L26.6,241.8 Q18.1,204.8 30.7,173.4 Z' },
+  { key: 'EB_flancoE', label: 'Flanco esquerdo', d: 'M181.3,173.4 L156.2,173.4 Q164.5,218.9 156.2,241.8 L185.4,241.8 Q193.9,204.8 181.3,173.4 Z' },
+  { key: 'EB_gluteoD', label: 'Glúteo direito', d: 'M26.6,284.6 L93.4,278.9 L87.1,375.8 L18.1,381.5 Z' },
+  { key: 'EB_gluteoE', label: 'Glúteo esquerdo', d: 'M185.4,284.6 L118.6,278.9 L124.9,375.8 L193.9,381.5 Z' },
+  { key: 'EB_coxaPostD', label: 'Coxa posterior direita', d: 'M18.1,381.5 L87.1,375.8 L85.1,469.9 L14.0,472.7 Z' },
+  { key: 'EB_coxaPostE', label: 'Coxa posterior esquerda', d: 'M193.9,381.5 L124.9,375.8 L126.9,469.9 L198.0,472.7 Z' },
+  { key: 'EB_panturrilhaD', label: 'Panturrilha posterior direita', d: 'M18.1,518.4 L81.0,515.5 L68.4,683.8 L30.7,686.6 Z' },
+  { key: 'EB_panturrilhaE', label: 'Panturrilha posterior esquerda', d: 'M193.9,518.4 L131.0,515.5 L143.6,683.8 L181.3,686.6 Z' },
+  { key: 'EB_tornozeloD', label: 'Tornozelo posterior direito', d: 'M30.7,686.6 L68.4,683.8 L64.2,715.1 L34.9,718.0 Z' },
+  { key: 'EB_tornozeloE', label: 'Tornozelo posterior esquerdo', d: 'M181.3,686.6 L143.6,683.8 L147.8,715.1 L177.1,718.0 Z' },
+];
+
+
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+}
+
+let currentPlan = null;
+let selectedRegions = new Set();
+let intensity = 5;
+let currentIdSessao = null;
+
+// ---- PIN ----
+let pin = '';
+document.getElementById('pinPad').addEventListener('click', e=>{
+  if(e.target.tagName !== 'BUTTON' || e.target.classList.contains('empty')) return;
+  const val = e.target.textContent;
+  if(val === chr(9003)){ pin = pin.slice(0,-1); }
+  else if(pin.length < 4){ pin += val; }
+  updatePinDots();
+  if(pin.length === 4) checarPin();
+});
+function chr(code){ return String.fromCharCode(code); }
+document.getElementById('btnFullscreen').addEventListener('click', ()=>{
+  if(!document.fullscreenElement){
+    if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(function(){});
+  } else {
+    if(document.exitFullscreen) document.exitFullscreen();
+  }
+});
+function updatePinDots(){
+  document.querySelectorAll('#pinDots .pin-dot').forEach((d,i)=> d.classList.toggle('filled', i < pin.length));
+}
+function shakePin(){
+  const dots = document.getElementById('pinDots');
+  dots.style.animation = 'shakeErr 0.4s ease';
+  setTimeout(()=> dots.style.animation = '', 400);
+}
+
+async function checarPin(){
+  try{
+    const res = await fetch(API_URL + '?action=validatePin&pin=' + pin);
+    const data = await res.json();
+    if(data.valid){
+      document.getElementById('pinError').textContent = '';
+      pin = ''; updatePinDots();
+      go('list');
+      carregarClientes();
+    } else {
+      document.getElementById('pinError').textContent = 'PIN incorreto.';
+      shakePin();
+      setTimeout(()=>{ pin=''; updatePinDots(); document.getElementById('pinError').textContent=''; }, 700);
+    }
+  }catch(err){
+    document.getElementById('pinError').textContent = 'Não foi possível conectar. Verifique a URL da API.';
+  }
+}
+
+let todasClientes = [];
+
+async function carregarClientes(){
+  document.getElementById('loadingMsg').style.display = 'block';
+  document.getElementById('clientRows').innerHTML = '';
+  document.getElementById('clientSearch').value = '';
+  try{
+    const res = await fetch(API_URL + '?action=list');
+    const clientes = await res.json();
+    todasClientes = clientes;
+    renderClientRows(clientes);
+  }catch(err){
+    document.getElementById('loadingMsg').textContent = 'Erro ao carregar clientes.';
+    return;
+  }
+  document.getElementById('loadingMsg').style.display = 'none';
+}
+
+document.getElementById('clientSearch').addEventListener('input', e=>{
+  const termo = e.target.value.trim().toLowerCase();
+  const filtradas = termo ? todasClientes.filter(c=> c.nome.toLowerCase().includes(termo)) : todasClientes;
+  renderClientRows(filtradas);
+});
+
+function planLabel(tipo){
+  return tipo === 'drenagem' ? 'Drenagem Linfática' : 'Massagem Terapêutica';
+}
+
+const STATUS_CLIENTE_INFO = {
+  ativo: {emoji:'🟢', label:'Plano ativo'},
+  vencido: {emoji:'🟡', label:'Plano vencido'},
+  sem_plano: {emoji:'⚪', label:'Sem plano ativo'}
+};
+
+function renderClientRows(clientes){
+  const box = document.getElementById('clientRows');
+  box.innerHTML = '';
+  if(clientes.length === 0){
+    box.innerHTML = '<div class="history-empty">Nenhuma cliente encontrada.</div>';
+    return;
+  }
+  clientes.forEach(c=>{
+    const info = STATUS_CLIENTE_INFO[c.status] || STATUS_CLIENTE_INFO.sem_plano;
+    const ultimaVisita = c.ultimo_atendimento ? formatDatePt(c.ultimo_atendimento) : 'Nenhum atendimento ainda';
+    const row = document.createElement('div');
+    row.className = 'client-row';
+    row.style.cursor = 'pointer';
+    row.innerHTML =
+      '<div style="flex:1;"><div class="name">'+info.emoji+' '+c.nome+'</div>' +
+      '<div class="sub">'+info.label+' &middot; Último atendimento: '+ultimaVisita+'</div></div>';
+    row.addEventListener('click', ()=> abrirFicha(c));
+    box.appendChild(row);
+  });
+}
+
+// ---- Nova cliente ----
+document.getElementById('btnNewClient').addEventListener('click', ()=>{
+  document.getElementById('ncNome').value = '';
+  document.getElementById('ncError').style.display = 'none';
+  go('newclient');
+});
+
+document.getElementById('btnCancelNewClient').addEventListener('click', ()=> go('list'));
+
+document.getElementById('btnSaveNewClient').addEventListener('click', async ()=>{
+  const nome = document.getElementById('ncNome').value.trim();
+  const errBox = document.getElementById('ncError');
+
+  if(!nome){
+    errBox.textContent = 'Digite o nome da cliente.';
+    errBox.style.display = 'block';
+    return;
+  }
+  errBox.style.display = 'none';
+
+  const btn = document.getElementById('btnSaveNewClient');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+  try{
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'createClient', nome: nome })
+    });
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
+    go('list');
+    carregarClientes();
+  }catch(err){
+    errBox.textContent = 'Não foi possível salvar: ' + err.message;
+    errBox.style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = 'Salvar cliente';
+});
+
+// ---- Novo plano ----
+let npTipo = 'terapeutico';
+document.getElementById('btnNewPlano').addEventListener('click', ()=> abrirNovoPlano(null));
+
+async function abrirNovoPlanoParaCliente(cliente){
+  await abrirNovoPlano(cliente);
+}
+
+async function abrirNovoPlano(clientePreSelecionado){
+  document.getElementById('npTotalSessoes').value = '';
+  document.getElementById('npValidade').value = '';
+  document.getElementById('npValorTotal').value = '';
+  document.getElementById('npValorPago').value = '';
+  document.getElementById('npDataPagamento').value = '';
+  document.getElementById('npPagamento').value = 'integral';
+  document.getElementById('npValorPagoWrap').style.display = 'none';
+  document.getElementById('npError').style.display = 'none';
+  npTipo = 'terapeutico';
+  document.querySelectorAll('#npTipoToggle button').forEach(b=> b.classList.toggle('active', b.dataset.tipo === npTipo));
+
+  const select = document.getElementById('npCliente');
+  select.innerHTML = '<option value="">Carregando...</option>';
+  go('newplano');
+  try{
+    const res = await fetch(API_URL + '?action=listClientesTodas');
+    const clientes = await res.json();
+    if(clientes.error) throw new Error(clientes.error);
+    if(!Array.isArray(clientes)) throw new Error('resposta inesperada da API');
+    select.innerHTML = '<option value="">Selecione...</option>' +
+      clientes.map(c=>'<option value="'+c.id_cliente+'">'+c.nome+'</option>').join('');
+    if(clientePreSelecionado){
+      select.value = clientePreSelecionado.id_cliente;
+      select.disabled = true;
+    } else {
+      select.disabled = false;
+    }
+  }catch(err){
+    select.innerHTML = '<option value="">Erro: ' + err.message + '</option>';
+  }
+}
+
+document.getElementById('btnCancelNewPlano').addEventListener('click', ()=> go('list'));
+
+document.getElementById('npTipoToggle').addEventListener('click', e=>{
+  if(e.target.tagName !== 'BUTTON') return;
+  npTipo = e.target.dataset.tipo;
+  document.querySelectorAll('#npTipoToggle button').forEach(b=> b.classList.toggle('active', b.dataset.tipo === npTipo));
+});
+
+document.getElementById('npPagamento').addEventListener('change', e=>{
+  document.getElementById('npValorPagoWrap').style.display = e.target.value === 'parcial' ? 'block' : 'none';
+});
+
+document.getElementById('btnSaveNewPlano').addEventListener('click', async ()=>{
+  const idCliente = document.getElementById('npCliente').value;
+  const totalSessoes = document.getElementById('npTotalSessoes').value;
+  const validade = document.getElementById('npValidade').value;
+  const valorTotal = document.getElementById('npValorTotal').value;
+  const valorPago = document.getElementById('npValorPago').value;
+  const dataPagamento = document.getElementById('npDataPagamento').value;
+  const pagamento = document.getElementById('npPagamento').value;
+  const errBox = document.getElementById('npError');
+
+  if(!idCliente || !totalSessoes){
+    errBox.textContent = 'Selecione a cliente e o total de sessões.';
+    errBox.style.display = 'block';
+    return;
+  }
+  errBox.style.display = 'none';
+
+  const btn = document.getElementById('btnSaveNewPlano');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+  try{
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'createPlano',
+        id_cliente: idCliente,
+        tipo: npTipo,
+        total_sessoes: totalSessoes,
+        validade: validade,
+        valor_total_plano: valorTotal,
+        status_pagamento: pagamento,
+        valor_pago: valorPago,
+        data_pagamento: dataPagamento
+      })
+    });
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
+    go('list');
+    carregarClientes();
+  }catch(err){
+    errBox.textContent = 'Não foi possível salvar: ' + err.message;
+    errBox.style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = 'Salvar plano';
+});
+
+// ---- Preparação para o atendimento ----
+let prepClienteAtual = null;
+
+async function abrirPreparacao(c){
+  prepClienteAtual = c;
+  document.getElementById('prepNome').textContent = c.nome;
+  document.getElementById('prepPrimeiraSessao').style.display = 'none';
+  document.getElementById('prepHistorico').style.display = 'none';
+  document.getElementById('prepLoading').textContent = 'Carregando...';
+  document.getElementById('prepLoading').style.display = 'block';
+  go('preparacao');
+
+  try{
+    const res = await fetch(API_URL + '?action=preparacao&id_cliente=' + encodeURIComponent(c.id_cliente));
+    const prep = await res.json();
+    if(prep.error) throw new Error(prep.error);
+    renderPreparacao(c, prep);
+    document.getElementById('prepLoading').style.display = 'none';
+  }catch(err){
+    document.getElementById('prepLoading').textContent = 'Não foi possível carregar o histórico agora (' + err.message + '). Toque em "Iniciar check-in" para continuar mesmo assim.';
+  }
+}
+
+function renderPreparacao(c, prep){
+  if(prep.primeiraSessao){
+    document.getElementById('prepPrimeiraSessao').style.display = 'block';
+    document.getElementById('prepPlanoPrimeira').textContent = planLabel(c.tipo);
+    const objCard = document.getElementById('prepObjetivoCard');
+    if(prep.objetivoPrincipal){
+      objCard.style.display = 'block';
+      document.getElementById('prepObjetivoTexto').textContent = prep.objetivoPrincipal;
+    } else {
+      objCard.style.display = 'none';
+    }
+    return;
+  }
+
+  document.getElementById('prepHistorico').style.display = 'block';
+
+  const observarCard = document.getElementById('prepObservarCard');
+  if(prep.observarHoje && prep.observarHoje.texto){
+    observarCard.style.display = 'block';
+    document.getElementById('prepObservarTexto').textContent = prep.observarHoje.texto;
+  } else {
+    observarCard.style.display = 'none';
+  }
+
+  document.getElementById('prepEvolucao').textContent = 'Sessão ' + (c.sessoes_realizadas + 1) + ' de ' + c.total_sessoes;
+  document.getElementById('prepPlano').textContent = planLabel(c.tipo);
+
+  const financeiroTextos = { integral:'🟢 Em dia', parcial:'🟠 Parcial', pendente:'🟠 Pendente' };
+  document.getElementById('prepFinanceiro').textContent = financeiroTextos[c.status_pagamento] || '—';
+
+  const u = prep.ultimaSessao || {};
+  const chegadaLabel = (CHEGADA_OPCOES.find(o=>o.v===u.chegada)||{}).label || u.chegada || '—';
+  const saidaLabel = (SAIDA_OPCOES.find(o=>o.v===u.saida)||{}).label || u.saida || '—';
+  document.getElementById('prepUltimaSessao').textContent =
+    (u.data ? formatDatePt(u.data) : '—') + ' · Chegou: ' + chegadaLabel + ' · Saiu: ' + saidaLabel;
+
+  fillChipsOrHide('prepRegioesCard', 'prepRegioesChips', u.regioes);
+  fillChipsOrHide('prepContextoCard', 'prepContextoChips', u.contexto);
+  fillChipsOrHide('prepAtencaoCard', 'prepAtencaoChips', u.atencao);
+
+  const padroesCard = document.getElementById('prepPadroesCard');
+  if(prep.padroes && prep.padroes.length > 0){
+    padroesCard.style.display = 'block';
+    document.getElementById('prepPadroesLista').innerHTML = prep.padroes.map(p=>'<div>&bull; '+p+'</div>').join('');
+  } else {
+    padroesCard.style.display = 'none';
+  }
+}
+
+function fillChipsOrHide(cardId, chipsId, lista){
+  const card = document.getElementById(cardId);
+  const box = document.getElementById(chipsId);
+  if(!lista || lista.length === 0){
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = 'block';
+  box.innerHTML = '';
+  lista.forEach(item=>{
+    const chip = document.createElement('span');
+    chip.className = 'region-chip';
+    chip.innerHTML = '<span class="dot"></span>' + item;
+    box.appendChild(chip);
+  });
+}
+
+document.getElementById('btnIniciarCheckin').addEventListener('click', ()=>{
+  if(prepClienteAtual) abrirCliente(prepClienteAtual);
+});
+
+// ---- Boas-vindas ----
+function abrirCliente(c){
+  currentPlan = c;
+  document.getElementById('greetName').textContent = c.nome;
+  document.getElementById('planSub').textContent = planLabel(c.tipo) + ' · sessão ' + c.sessoes_realizadas + ' de ' + c.total_sessoes;
+
+  const remaining = c.total_sessoes - c.sessoes_realizadas;
+  const note = document.getElementById('gentleNote');
+  if(remaining === 2){
+    note.textContent = 'Faltam apenas ' + remaining + ' sessões para concluir seu plano.';
+  } else {
+    note.textContent = '';
+  }
+  go('welcome');
+}
+
+document.getElementById('btnViewHistory').addEventListener('click', async ()=>{
+  document.getElementById('historyName').textContent = currentPlan.nome;
+  document.getElementById('historyList').innerHTML = '';
+  document.getElementById('historyLoading').style.display = 'block';
+  renderHistoryFinanceiro(currentPlan);
+  go('history');
+  try{
+    const res = await fetch(API_URL + '?action=history&id_cliente=' + encodeURIComponent(currentPlan.id_cliente));
+    const sessoes = await res.json();
+    renderHistory(sessoes);
+  }catch(err){
+    document.getElementById('historyList').innerHTML = '<div class="history-empty">Não foi possível carregar seu histórico agora.</div>';
+  }
+  document.getElementById('historyLoading').style.display = 'none';
+});
+
+function renderHistoryFinanceiro(plano){
+  const box = document.getElementById('historyFinanceiro');
+  const iconePorStatus = { integral: '✔', parcial: '🟡', pendente: '🔴' };
+  const textoPorStatus = { integral: 'Pago integralmente', parcial: 'Pago parcialmente', pendente: 'Pendente' };
+  const status = plano.status_pagamento || 'pendente';
+
+  let html =
+    '<div class="history-date">' + planLabel(plano.tipo) + '</div>' +
+    '<div class="history-meta">' + plano.total_sessoes + ' sessões &middot; realizadas: ' + plano.sessoes_realizadas + ' de ' + plano.total_sessoes + '</div>' +
+    '<div style="margin-top:8px; font-size:14px;">Pagamento: ' + (iconePorStatus[status]||'') + ' ' + (textoPorStatus[status]||'') + '</div>';
+
+  if(plano.data_pagamento){
+    html += '<div style="font-size:13px; color:var(--ink-soft); margin-top:2px;">Data do pagamento: ' + formatDatePt(plano.data_pagamento) + '</div>';
+  }
+  if(status === 'parcial'){
+    html += '<div style="font-size:13px; margin-top:6px;">Valor pago: R$ ' + Number(plano.valor_pago).toFixed(2).replace('.', ',') + '</div>';
+    html += '<div style="font-size:13px;">Valor restante: R$ ' + Number(plano.valor_restante).toFixed(2).replace('.', ',') + '</div>';
+  }
+  box.innerHTML = html;
+}
+
+document.getElementById('btnBackFromHistory').addEventListener('click', ()=> go('welcome'));
+
+function renderHistory(sessoes){
+  const box = document.getElementById('historyList');
+  if(!sessoes || sessoes.length === 0){
+    box.innerHTML = '<div class="history-empty">Ainda não há sessões registradas.</div>';
+    return;
+  }
+  box.innerHTML = '';
+  const isEdema = currentPlan.tipo === 'drenagem';
+  sessoes.forEach(s=>{
+    const card = document.createElement('div');
+    card.className = 'history-card';
+    const intensidadeLabel = isEdema ? 'Retenção percebida' : 'Dor percebida';
+    const regioes = (s.regioes || '').split(',').map(r=>r.trim()).filter(Boolean);
+    const chips = regioes.map(r=>'<span class="region-chip"><span class="dot"></span>'+r+'</span>').join('');
+    card.innerHTML =
+      '<div class="history-date">Sessão ' + s.numero_sessao + ' — ' + formatDatePt(s.data) + '</div>' +
+      '<div class="history-meta">' + intensidadeLabel + ': ' + s.intensidade + ' / 10</div>' +
+      '<div class="region-chips">' + (chips || '<span class="history-meta">Sem região marcada</span>') + '</div>';
+    box.appendChild(card);
+  });
+}
+
+function formatDatePt(iso){
+  if(!iso) return '';
+  const parts = String(iso).split('-');
+  if(parts.length !== 3) return iso;
+  return parts[2] + '/' + parts[1] + '/' + parts[0];
+}
+
+document.getElementById('btnStartCheckin').addEventListener('click', ()=>{
+  const remaining = currentPlan.total_sessoes - currentPlan.sessoes_realizadas;
+  if(remaining <= 1){
+    abrirUltimaSessao();
+  } else {
+    iniciarFluxoCheckin();
+  }
+});
+
+function abrirUltimaSessao(){
+  document.getElementById('ultimaSessaoPlano').textContent = planLabel(currentPlan.tipo);
+  document.getElementById('ultimaSessaoContagem').textContent = 'Sessão ' + currentPlan.total_sessoes + ' de ' + currentPlan.total_sessoes;
+
+  const status = currentPlan.status_pagamento;
+  const cardPendente = document.getElementById('ultimaSessaoPendenteCard');
+  const cardParcial = document.getElementById('ultimaSessaoParcialCard');
+  cardPendente.style.display = 'none';
+  cardParcial.style.display = 'none';
+
+  if(status === 'pendente'){
+    cardPendente.style.display = 'block';
+  } else if(status === 'parcial'){
+    cardParcial.style.display = 'block';
+    document.getElementById('ultimaSessaoValorRestante').textContent =
+      'Valor restante: R$ ' + Number(currentPlan.valor_restante || 0).toFixed(2).replace('.', ',');
+  }
+
+  go('ultima-sessao');
+}
+
+document.getElementById('btnContinuarUltimaSessao').addEventListener('click', ()=> iniciarFluxoCheckin());
+
+function iniciarFluxoCheckin(){
+  intensity = null; selectedRegions = new Set(); bodyView = 'back';
+  const isEdema = currentPlan.tipo === 'drenagem';
+  document.getElementById('intensityTitle').textContent = isEdema ? 'Como está o inchaço hoje?' : 'Como está sua dor hoje?';
+  document.getElementById('intensityLabelMin').textContent = isEdema ? 'Sem inchaço' : 'Nenhuma dor';
+  document.getElementById('intensityLabelMax').textContent = isEdema ? 'Muito inchada' : 'Muito forte';
+  document.getElementById('mapTitle').textContent = isEdema ? 'Onde você percebe retenção de líquido hoje?' : 'Onde você sente dor hoje?';
+  renderIntensityGrid();
+  go('intensity');
+}
+
+function renderIntensityGrid(){
+  const box = document.getElementById('intensityGrid');
+  box.innerHTML = '';
+  document.getElementById('btnToRegions').disabled = true;
+  for(let n=0; n<=10; n++){
+    const b = document.createElement('button');
+    b.className = 'intensity-btn';
+    b.textContent = n;
+    b.onclick = ()=>{
+      intensity = n;
+      box.querySelectorAll('.intensity-btn').forEach(x=>x.classList.remove('selected'));
+      b.classList.add('selected');
+      document.getElementById('btnToRegions').disabled = false;
+    };
+    box.appendChild(b);
+  }
+}
+
+document.getElementById('btnToRegions').addEventListener('click', ()=>{
+  if(intensity === null) return;
+  setView('back');
+  go('checkin');
+});
+
+// ---- Mapa corporal (seleção de regiões por toque) ----
+let bodyView = 'back';
+
+document.getElementById('btnViewBack').addEventListener('click', ()=> setView('back'));
+document.getElementById('btnViewFront').addEventListener('click', ()=> setView('front'));
+
+function setView(view){
+  bodyView = view;
+  document.getElementById('btnViewBack').classList.toggle('active', view==='back');
+  document.getElementById('btnViewFront').classList.toggle('active', view==='front');
+  renderBodyMap();
+}
+
+function currentRegionDefs(){
+  const isEdema = currentPlan.tipo === 'drenagem';
+  if(isEdema) return bodyView === 'front' ? EDEMA_FRONT : EDEMA_BACK;
+  return bodyView === 'front' ? REGION_DEFS_FRONT : REGION_DEFS_BACK;
+}
+
+function currentMapImage(){
+  const isEdema = currentPlan.tipo === 'drenagem';
+  const n = isEdema ? 'map2' : 'map1';
+  return 'assets/' + n + '-' + bodyView + '.png';
+}
+
+function allRegionDefs(){
+  return [].concat(REGION_DEFS_FRONT, REGION_DEFS_BACK, EDEMA_FRONT, EDEMA_BACK);
+}
+
+function renderBodyMap(){
+  const container = document.getElementById('bodyMapContainer');
+  const defs = currentRegionDefs();
+  let svgPaths = '';
+  defs.forEach(r=>{
+    const on = selectedRegions.has(r.key);
+    svgPaths += '<path data-key="'+r.key+'" class="region-path" d="'+r.d+'" fill="'+(on ? '#C98A2A' : 'transparent')+'" fill-opacity="'+(on?0.65:0)+'"></path>';
+  });
+  container.style.backgroundImage = 'url(' + currentMapImage() + ')';
+  container.style.backgroundSize = 'contain';
+  container.style.backgroundPosition = 'center';
+  container.style.backgroundRepeat = 'no-repeat';
+  container.innerHTML =
+    '<svg viewBox="0 0 250 750" preserveAspectRatio="xMidYMid meet" xmlns:xlink="http://www.w3.org/1999/xlink">' +
+      '<image href="'+currentMapImage()+'" xlink:href="'+currentMapImage()+'" x="0" y="0" width="250" height="750"></image>' +
+      svgPaths +
+    '</svg>';
+  container.querySelectorAll('.region-path').forEach(p=>{
+    p.addEventListener('click', ()=>{
+      const key = p.getAttribute('data-key');
+      if(selectedRegions.has(key)) selectedRegions.delete(key);
+      else selectedRegions.add(key);
+      renderBodyMap();
+      renderCheckinChips();
+    });
+  });
+  renderCheckinChips();
+}
+
+function renderCheckinChips(){
+  const box = document.getElementById('checkinSelectedChips');
+  if(selectedRegions.size === 0){
+    box.innerHTML = '<span class="checkin-side-hint">Toque no desenho para marcar</span>';
+    return;
+  }
+  const defs = allRegionDefs();
+  box.innerHTML = '';
+  selectedRegions.forEach(key=>{
+    const def = defs.find(r=>r.key===key);
+    const chip = document.createElement('span');
+    chip.className = 'region-chip';
+    chip.innerHTML = '<span class="dot"></span>' + (def ? def.label : key);
+    box.appendChild(chip);
+  });
+}
+
+document.getElementById('btnToSignature').addEventListener('click', ()=>{
+  resetSignaturePad();
+  go('signature');
+});
+
+// ---- Assinatura ----
+const canvas = document.getElementById('sigCanvas');
+const ctx = canvas.getContext('2d');
+let signed = false;
+function resizeCanvas(){
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width; canvas.height = rect.height;
+  ctx.strokeStyle = '#43312A'; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+}
+window.addEventListener('resize', resizeCanvas);
+
+function resetSignaturePad(){
+  setTimeout(()=>{
+    resizeCanvas();
+    signed = false;
+    document.getElementById('btnConfirmSig').classList.remove('ready');
+    document.getElementById('submitError').style.display = 'none';
+  }, 50);
+}
+
+let drawing = false;
+function pos(e){
+  const rect = canvas.getBoundingClientRect();
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+canvas.addEventListener('pointerdown', e=>{
+  drawing = true; signed = true;
+  document.getElementById('btnConfirmSig').classList.add('ready');
+  const p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y);
+});
+canvas.addEventListener('pointermove', e=>{
+  if(!drawing) return;
+  const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke();
+});
+window.addEventListener('pointerup', ()=> drawing = false);
+
+document.getElementById('btnClearSig').addEventListener('click', ()=>{
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  signed = false;
+  document.getElementById('btnConfirmSig').classList.remove('ready');
+});
+
+document.getElementById('btnConfirmSig').addEventListener('click', async ()=>{
+  if(!signed) return;
+  const btn = document.getElementById('btnConfirmSig');
+  btn.textContent = 'Enviando...';
+  document.getElementById('submitError').style.display = 'none';
+  try{
+    const regioesLabels = Array.from(selectedRegions).map(k=>{
+      const def = allRegionDefs().find(r=>r.key===k);
+      return def ? def.label : k;
+    });
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'checkin',
+        id_plano: currentPlan.id_plano,
+        id_cliente: currentPlan.id_cliente,
+        intensidade: intensity,
+        regioes: regioesLabels
+      })
+    });
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
+    currentIdSessao = data.id_sessao;
+    resumoSnapshot = {
+      intensidade: intensity,
+      regioes: regioesLabels
+    };
+    document.getElementById('confirmSub').textContent = currentPlan.nome + ' · sessão ' + data.sessoes_realizadas + ' de ' + data.total_sessoes;
+    document.getElementById('noteBox').style.display = 'none';
+    document.getElementById('noteBox').value = '';
+    document.getElementById('btnOpenNote').style.display = 'inline-block';
+    go('confirm');
+  }catch(err){
+    document.getElementById('submitError').textContent = 'Não foi possível salvar. Tente novamente.';
+    document.getElementById('submitError').style.display = 'block';
+  }
+  btn.textContent = 'Confirmar';
+});
+
+// ---- Confirmação ----
+document.getElementById('btnOpenNote').addEventListener('click', ()=>{
+  document.getElementById('noteBox').style.display = 'block';
+  document.getElementById('btnOpenNote').style.display = 'none';
+});
+
+document.getElementById('btnFinish').addEventListener('click', async ()=>{
+  const nota = document.getElementById('noteBox').value.trim();
+  if(nota && currentIdSessao){
+    try{
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'addNote', id_sessao: currentIdSessao, nota: nota })
+      });
+    }catch(err){ /* nota é opcional — segue o fluxo mesmo se falhar */ }
+  }
+  abrirResumoCheckin();
+});
+
+// ---- Resumo do check-in (referência da terapeuta antes/durante o atendimento) ----
+let resumoSnapshot = { intensidade: 0, regioes: [] };
+let atendimentoIniciado = false;
+
+function abrirResumoCheckin(){
+  document.getElementById('resumoTitulo').textContent = 'Resumo — ' + currentPlan.nome;
+
+  document.getElementById('observacaoAtivaCard').style.display = 'none';
+  fetch(API_URL + '?action=observacaoAtiva&id_cliente=' + encodeURIComponent(currentPlan.id_cliente))
+    .then(r=>r.json())
+    .then(obs=>{
+      if(obs && obs.texto){
+        document.getElementById('observacaoAtivaTexto').textContent = obs.texto;
+        document.getElementById('observacaoAtivaData').textContent = 'Registrado em ' + formatDatePt(obs.data);
+        document.getElementById('observacaoAtivaCard').style.display = 'block';
+      }
+    })
+    .catch(()=>{});
+
+  const isEdema = currentPlan.tipo === 'drenagem';
+  document.getElementById('resumoIntensidadeLabel').textContent = isEdema ? 'Intensidade do inchaço' : 'Intensidade da dor';
+  document.getElementById('resumoIntensidade').textContent = resumoSnapshot.intensidade;
+
+  const card = document.getElementById('resumoIntensidadeCard');
+  card.classList.remove('sev-high', 'sev-low');
+  if(resumoSnapshot.intensidade >= 7) card.classList.add('sev-high');
+  else if(resumoSnapshot.intensidade <= 3) card.classList.add('sev-low');
+
+  const chipsBox = document.getElementById('resumoRegioesChips');
+  chipsBox.innerHTML = '';
+  if(resumoSnapshot.regioes.length === 0){
+    chipsBox.innerHTML = '<span style="color:var(--staff-text-soft); font-size:13px;">Nenhuma região marcada</span>';
+  } else {
+    resumoSnapshot.regioes.forEach(r=>{
+      const chip = document.createElement('span');
+      chip.className = 'region-chip';
+      chip.innerHTML = '<span class="dot"></span>' + r;
+      chipsBox.appendChild(chip);
+    });
+  }
+
+  atendimentoIniciado = false;
+  const btn = document.getElementById('btnResumoAction');
+  btn.textContent = 'Iniciar atendimento';
+  go('resumo');
+}
+
+document.getElementById('btnResumoAction').addEventListener('click', ()=>{
+  const btn = document.getElementById('btnResumoAction');
+  if(!atendimentoIniciado){
+    atendimentoIniciado = true;
+    btn.textContent = 'Finalizar atendimento';
+  } else {
+    abrirRegistroTerapeuta();
+  }
+});
+
+// ---- Registro rápido pós-atendimento (tela interna) ----
+const CHEGADA_OPCOES = [
+  {v:'muito_bem', emoji:'😊', label:'Muito bem'},
+  {v:'bem', emoji:'🙂', label:'Bem'},
+  {v:'normal', emoji:'😐', label:'Normal'},
+  {v:'cansada', emoji:'😣', label:'Cansada'},
+  {v:'muito_mal', emoji:'😖', label:'Muito mal'}
+];
+const SAIDA_OPCOES = [
+  {v:'muito_melhor', emoji:'😀', label:'Muito melhor'},
+  {v:'melhor', emoji:'🙂', label:'Melhor'},
+  {v:'igual', emoji:'😐', label:'Igual'},
+  {v:'pior', emoji:'🙁', label:'Pior'}
+];
+const CONTEXTO_DIA_OPCOES = ['Estressada','Ansiosa','Cansada','Dormiu mal','Trabalho intenso','Exercício intenso','TPM','Menstruada','Ovulação','Dor de cabeça','Bruxismo'];
+const REALIZADO_OPCOES = ['Relaxante','Terapêutica','Thai','Drenagem','Alongamentos','Liberação miofascial','Ventosa','Facial'];
+const PRESSAO_OPCOES = ['Leve','Média','Forte','Personalizada'];
+const ATENCAO_OPCOES = ['Relaxou rapidamente','Demorou para relaxar','Dormiu durante a sessão','Muito sensível ao toque','Precisou diminuir pressão','Precisou aumentar pressão','Respiração curta','Muito tensa','Conversou bastante','Ficou em silêncio','Chorou','Riu','Dor mudou durante a sessão','Voltou melhor que na última sessão'];
+
+let regChegadaValor = '';
+let regSaidaValor = '';
+let regPressaoValor = '';
+let regContextoSet = new Set();
+let regRealizadoSet = new Set();
+let regAtencaoSet = new Set();
+let regAcompanharAtivo = false;
+
+function renderEmojiRow(containerId, opcoes, getValor, setValor){
+  const box = document.getElementById(containerId);
+  box.innerHTML = '';
+  opcoes.forEach(o=>{
+    const b = document.createElement('button');
+    b.className = 'emoji-btn' + (getValor() === o.v ? ' selected' : '');
+    b.innerHTML = '<span class="emoji">'+o.emoji+'</span>'+o.label;
+    b.onclick = ()=>{
+      setValor(o.v);
+      box.querySelectorAll('.emoji-btn').forEach(x=>x.classList.remove('selected'));
+      b.classList.add('selected');
+    };
+    box.appendChild(b);
+  });
+}
+
+function renderChipMulti(containerId, opcoes, selectedSet){
+  const box = document.getElementById(containerId);
+  box.innerHTML = '';
+  opcoes.forEach(nome=>{
+    const b = document.createElement('button');
+    b.className = 'chip-select';
+    b.textContent = nome;
+    b.onclick = ()=>{
+      if(selectedSet.has(nome)) selectedSet.delete(nome);
+      else selectedSet.add(nome);
+      b.classList.toggle('selected');
+    };
+    box.appendChild(b);
+  });
+}
+
+function renderPressao(){
+  const box = document.getElementById('regPressao');
+  box.innerHTML = '';
+  const customBox = document.getElementById('regPressaoCustom');
+  PRESSAO_OPCOES.forEach(nome=>{
+    const b = document.createElement('button');
+    b.className = 'chip-select';
+    b.textContent = nome;
+    b.onclick = ()=>{
+      regPressaoValor = nome;
+      box.querySelectorAll('.chip-select').forEach(x=>x.classList.remove('selected'));
+      b.classList.add('selected');
+      customBox.style.display = nome === 'Personalizada' ? 'block' : 'none';
+    };
+    box.appendChild(b);
+  });
+  customBox.style.display = 'none';
+  customBox.value = '';
+}
+
+function abrirRegistroTerapeuta(){
+  document.getElementById('registroTitulo').textContent = 'Registro — ' + currentPlan.nome;
+  regChegadaValor = ''; regSaidaValor = ''; regPressaoValor = '';
+  regContextoSet = new Set(); regRealizadoSet = new Set(); regAtencaoSet = new Set();
+  regAcompanharAtivo = false;
+
+  renderEmojiRow('regChegada', CHEGADA_OPCOES, ()=>regChegadaValor, v=>regChegadaValor=v);
+  renderEmojiRow('regSaida', SAIDA_OPCOES, ()=>regSaidaValor, v=>regSaidaValor=v);
+  renderChipMulti('regContexto', CONTEXTO_DIA_OPCOES, regContextoSet);
+  renderChipMulti('regRealizado', REALIZADO_OPCOES, regRealizadoSet);
+  renderChipMulti('regAtencao', ATENCAO_OPCOES, regAtencaoSet);
+  renderPressao();
+
+  document.getElementById('regObservarTexto').value = '';
+  document.getElementById('regInsightCliente').value = '';
+  document.getElementById('btnAcompanhar').classList.remove('active');
+
+  go('registro');
+}
+
+document.getElementById('btnAcompanhar').addEventListener('click', ()=>{
+  regAcompanharAtivo = !regAcompanharAtivo;
+  document.getElementById('btnAcompanhar').classList.toggle('active', regAcompanharAtivo);
+});
+
+document.getElementById('btnSaveRegistro').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnSaveRegistro');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+
+  let pressaoFinal = regPressaoValor;
+  if(regPressaoValor === 'Personalizada'){
+    const custom = document.getElementById('regPressaoCustom').value.trim();
+    if(custom) pressaoFinal = custom;
+  }
+
+  try{
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'saveRegistroTerapeuta',
+        id_sessao: currentIdSessao,
+        id_cliente: currentPlan.id_cliente,
+        chegada: regChegadaValor,
+        contexto_dia: Array.from(regContextoSet),
+        realizado: Array.from(regRealizadoSet),
+        pressao: pressaoFinal,
+        saida: regSaidaValor,
+        atencao: Array.from(regAtencaoSet),
+        observar_texto: document.getElementById('regObservarTexto').value.trim(),
+        observar_ativo: regAcompanharAtivo,
+        insight_cliente: document.getElementById('regInsightCliente').value.trim()
+      })
+    });
+  }catch(err){ /* segue o fluxo mesmo se falhar — não trava o dia da terapeuta */ }
+  currentPlan = null; currentIdSessao = null;
+  btn.disabled = false; btn.textContent = 'Salvar e voltar para a lista';
+  go('list');
+  carregarClientes();
+});
+
+// ---- Ficha clínica + histórico completo (tela interna) ----
+let fichaClienteAtual = null;
+
+async function abrirFicha(c){
+  fichaClienteAtual = c;
+  document.getElementById('fichaTitulo').textContent = 'Ficha clínica — ' + c.nome;
+  ['fcProfissao','fcIdade','fcTelefone','fcObjetivo','fcQueixa','fcLesoes','fcCirurgias','fcDoencas','fcMedicamentos','fcAlergias','fcAtividades','fcRestricoes','fcObservacoes'].forEach(id=> document.getElementById(id).value = '');
+  document.getElementById('fichaHistorico').innerHTML = 'Carregando...';
+  document.getElementById('fichaPlanos').innerHTML = 'Carregando...';
+
+  const btnIniciar = document.getElementById('btnIniciarAtendimentoFicha');
+  const btnNovoPlano = document.getElementById('btnCriarNovoPlanoFicha');
+  if(c.plano){
+    btnIniciar.style.display = 'block';
+    btnNovoPlano.style.display = 'none';
+  } else {
+    btnIniciar.style.display = 'none';
+    btnNovoPlano.style.display = 'block';
+  }
+
+  go('ficha');
+
+  try{
+    const res3 = await fetch(API_URL + '?action=planosCliente&id_cliente=' + encodeURIComponent(c.id_cliente));
+    const planos = await res3.json();
+    if(planos && planos.error) throw new Error(planos.error);
+    if(!Array.isArray(planos)) throw new Error('resposta inesperada da API: ' + JSON.stringify(planos).slice(0,200));
+    renderFichaPlanos(planos);
+  }catch(err){
+    console.error('Erro ao carregar planos de', c.id_cliente, err);
+    document.getElementById('fichaPlanos').innerHTML = '<div class="history-empty">Não foi possível carregar os planos: ' + err.message + '</div>';
+  }
+
+  try{
+    const res = await fetch(API_URL + '?action=fichaClinica&id_cliente=' + encodeURIComponent(c.id_cliente));
+    const f = await res.json();
+    document.getElementById('fcProfissao').value = f.profissao || '';
+    document.getElementById('fcIdade').value = f.idade || '';
+    document.getElementById('fcTelefone').value = f.telefone || '';
+    document.getElementById('fcObjetivo').value = f.objetivo_principal || '';
+    document.getElementById('fcQueixa').value = f.queixa_principal || '';
+    document.getElementById('fcLesoes').value = f.historico_lesoes || '';
+    document.getElementById('fcCirurgias').value = f.cirurgias || '';
+    document.getElementById('fcDoencas').value = f.doencas || '';
+    document.getElementById('fcMedicamentos').value = f.medicamentos || '';
+    document.getElementById('fcAlergias').value = f.alergias || '';
+    document.getElementById('fcAtividades').value = f.atividades_fisicas || '';
+    document.getElementById('fcRestricoes').value = f.restricoes || '';
+    document.getElementById('fcObservacoes').value = f.observacoes_gerais || '';
+  }catch(err){ /* ficha pode não existir ainda — segue com campos em branco */ }
+
+  try{
+    const res2 = await fetch(API_URL + '?action=historyStaff&id_cliente=' + encodeURIComponent(c.id_cliente));
+    const sessoes = await res2.json();
+    renderFichaHistorico(sessoes);
+  }catch(err){
+    document.getElementById('fichaHistorico').innerHTML = '<div class="history-empty">Não foi possível carregar o histórico.</div>';
+  }
+}
+
+function renderFichaPlanos(planos){
+  const box = document.getElementById('fichaPlanos');
+  if(!planos || planos.length === 0){
+    box.innerHTML = '<div class="history-empty">Nenhum plano cadastrado ainda.</div>';
+    return;
+  }
+  const statusLabels = {ativo:'Ativo', vencido:'Vencido', concluido:'Concluído', cancelado:'Cancelado'};
+  box.innerHTML = '';
+  planos.forEach(p=>{
+    const card = document.createElement('div');
+    card.style.background = 'var(--staff-card)';
+    card.style.border = '1px solid var(--staff-border)';
+    card.style.borderRadius = '12px';
+    card.style.padding = '12px 16px';
+    card.style.fontSize = '14px';
+    card.innerHTML =
+      '<div style="font-weight:600;">'+planLabel(p.tipo)+' &middot; '+(statusLabels[p.status]||p.status)+'</div>' +
+      '<div style="color:var(--staff-text-soft); margin-top:2px;">Sessões: '+p.sessoes_realizadas+' de '+p.total_sessoes+' &middot; Validade: '+(p.validade||'—')+'</div>' +
+      '<div style="color:var(--staff-text-soft); margin-top:2px;">Pagamento: '+labelStatusPagamentoJS(p.status_pagamento)+(p.status_pagamento==='parcial' ? ' (restam R$ '+Number(p.valor_restante).toFixed(2).replace('.',',')+')' : '')+'</div>';
+    box.appendChild(card);
+  });
+}
+
+function labelStatusPagamentoJS(status){
+  if(status === 'integral') return '✔ Pago integralmente';
+  if(status === 'parcial') return '🟡 Pago parcialmente';
+  return '🔴 Pendente';
+}
+
+document.getElementById('btnIniciarAtendimentoFicha').addEventListener('click', ()=>{
+  if(!fichaClienteAtual || !fichaClienteAtual.plano) return;
+  const c = fichaClienteAtual;
+  abrirPreparacao({
+    id_cliente: c.id_cliente,
+    nome: c.nome,
+    id_plano: c.plano.id_plano,
+    tipo: c.plano.tipo,
+    total_sessoes: c.plano.total_sessoes,
+    sessoes_realizadas: c.plano.sessoes_realizadas,
+    validade: c.plano.validade,
+    status: c.plano.status,
+    status_pagamento: c.plano.status_pagamento,
+    valor_pago: c.plano.valor_pago,
+    valor_restante: c.plano.valor_restante,
+    data_pagamento: c.plano.data_pagamento
+  });
+});
+
+document.getElementById('btnCriarNovoPlanoFicha').addEventListener('click', ()=>{
+  if(!fichaClienteAtual) return;
+  abrirNovoPlanoParaCliente(fichaClienteAtual);
+});
+
+function renderFichaHistorico(sessoes){
+  const box = document.getElementById('fichaHistorico');
+  if(!sessoes || sessoes.length === 0){
+    box.innerHTML = '<div class="history-empty">Ainda não há sessões registradas.</div>';
+    return;
+  }
+  box.innerHTML = '';
+  sessoes.forEach(s=>{
+    const card = document.createElement('div');
+    card.style.background = 'var(--staff-card)';
+    card.style.border = '1px solid var(--staff-border)';
+    card.style.borderRadius = '12px';
+    card.style.padding = '14px 16px';
+    card.style.fontSize = '13px';
+    const r = s.registro || {};
+    card.innerHTML =
+      '<div style="font-family:var(--serif); font-size:16px; margin-bottom:6px;">Sessão ' + s.numero_sessao + ' — ' + formatDatePt(s.data) + '</div>' +
+      '<div style="color:var(--staff-text-soft); margin-bottom:6px;">Intensidade: ' + s.intensidade + ' / 10 &middot; Regiões: ' + (s.regioes || '—') + '</div>' +
+      (r.chegada || r.saida ? '<div style="margin-bottom:4px;">Chegou: ' + (r.chegada||'—') + ' &middot; Saiu: ' + (r.saida||'—') + '</div>' : '') +
+      (r.contexto_dia ? '<div style="margin-bottom:4px;">Contexto do dia: ' + r.contexto_dia + '</div>' : '') +
+      (r.realizado ? '<div style="margin-bottom:4px;">Realizado: ' + r.realizado + '</div>' : '') +
+      (r.pressao ? '<div style="margin-bottom:4px;">Pressão: ' + r.pressao + '</div>' : '') +
+      (r.atencao ? '<div style="margin-bottom:4px;">Chamou atenção: ' + r.atencao + '</div>' : '') +
+      (r.observar_texto ? '<div style="margin-bottom:4px;">' + (r.observar_ativo ? '⭐ ' : '') + 'Observar: ' + r.observar_texto + '</div>' : '') +
+      (r.insight_cliente ? '<div style="margin-bottom:4px;">Insight da cliente: "' + r.insight_cliente + '"</div>' : '') +
+      (s.observacao_interna ? '<div style="margin-bottom:4px;">Nota privada: ' + s.observacao_interna + '</div>' : '');
+    box.appendChild(card);
+  });
+}
+
+document.getElementById('btnCloseFicha').addEventListener('click', ()=> go('list'));
+
+document.getElementById('btnSaveFicha').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnSaveFicha');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+  try{
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'saveFichaClinica',
+        id_cliente: fichaClienteAtual.id_cliente,
+        profissao: document.getElementById('fcProfissao').value.trim(),
+        idade: document.getElementById('fcIdade').value.trim(),
+        telefone: document.getElementById('fcTelefone').value.trim(),
+        objetivo_principal: document.getElementById('fcObjetivo').value.trim(),
+        queixa_principal: document.getElementById('fcQueixa').value.trim(),
+        historico_lesoes: document.getElementById('fcLesoes').value.trim(),
+        cirurgias: document.getElementById('fcCirurgias').value.trim(),
+        doencas: document.getElementById('fcDoencas').value.trim(),
+        medicamentos: document.getElementById('fcMedicamentos').value.trim(),
+        alergias: document.getElementById('fcAlergias').value.trim(),
+        atividades_fisicas: document.getElementById('fcAtividades').value.trim(),
+        restricoes: document.getElementById('fcRestricoes').value.trim(),
+        observacoes_gerais: document.getElementById('fcObservacoes').value.trim()
+      })
+    });
+  }catch(err){ /* ... */ }
+  btn.disabled = false; btn.textContent = 'Salvar ficha';
+});
+</script>
+</body>
+</html>
