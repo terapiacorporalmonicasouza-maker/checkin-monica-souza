@@ -1625,7 +1625,60 @@ function renderFichaPlanos(planos){
     card.innerHTML =
       '<div style="font-weight:600;">'+planLabel(p.tipo)+' &middot; '+(statusLabels[p.status]||p.status)+'</div>' +
       '<div style="color:var(--staff-text-soft); margin-top:2px;">Sessões: '+p.sessoes_realizadas+' de '+p.total_sessoes+' &middot; Validade: '+(p.validade||'—')+'</div>' +
-      '<div style="color:var(--staff-text-soft); margin-top:2px;">Pagamento: '+labelStatusPagamentoJS(p.status_pagamento)+(p.status_pagamento==='parcial' ? ' (restam R$ '+Number(p.valor_restante).toFixed(2).replace('.',',')+')' : '')+'</div>';
+      '<div style="color:var(--staff-text-soft); margin-top:2px;">Pagamento: '+labelStatusPagamentoJS(p.status_pagamento)+(p.status_pagamento==='parcial' ? ' (restam R$ '+Number(p.valor_restante).toFixed(2).replace('.',',')+')' : '')+'</div>' +
+      '<button class="note-toggle" data-editpag style="margin-top:6px; padding:0;">Atualizar pagamento</button>' +
+      '<div data-pagform style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid var(--staff-border);">' +
+        '<div class="chip-select-grid">' +
+          '<button class="chip-select" data-pagopt="integral">Pago integralmente</button>' +
+          '<button class="chip-select" data-pagopt="parcial">Pago parcialmente</button>' +
+          '<button class="chip-select" data-pagopt="pendente">Pendente</button>' +
+        '</div>' +
+        '<input type="number" class="nc-input" data-valorpago style="margin-top:8px; display:none;" placeholder="Valor pago (R$)">' +
+        '<input type="date" class="nc-input" data-datapag style="margin-top:8px;">' +
+        '<button class="btn-primary" data-salvarpag style="margin-top:8px; width:100%;">Salvar pagamento</button>' +
+      '</div>';
+
+    const formDiv = card.querySelector('[data-pagform]');
+    card.querySelector('[data-editpag]').addEventListener('click', ()=>{
+      formDiv.style.display = formDiv.style.display === 'none' ? 'block' : 'none';
+    });
+    let statusEscolhido = p.status_pagamento;
+    card.querySelectorAll('[data-pagopt]').forEach(btn=>{
+      if(btn.dataset.pagopt === statusEscolhido) btn.classList.add('selected');
+      btn.addEventListener('click', ()=>{
+        statusEscolhido = btn.dataset.pagopt;
+        card.querySelectorAll('[data-pagopt]').forEach(b=>b.classList.remove('selected'));
+        btn.classList.add('selected');
+        card.querySelector('[data-valorpago]').style.display = statusEscolhido === 'parcial' ? 'block' : 'none';
+      });
+    });
+    if(statusEscolhido === 'parcial') card.querySelector('[data-valorpago]').style.display = 'block';
+    card.querySelector('[data-valorpago]').value = p.valor_pago || '';
+    card.querySelector('[data-datapag]').value = p.data_pagamento || '';
+
+    card.querySelector('[data-salvarpag]').addEventListener('click', async ()=>{
+      const btn = card.querySelector('[data-salvarpag]');
+      btn.disabled = true; btn.textContent = 'Salvando...';
+      try{
+        await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'updatePagamentoPlano',
+            id_plano: p.id_plano,
+            status_pagamento: statusEscolhido,
+            valor_pago: card.querySelector('[data-valorpago]').value,
+            data_pagamento: card.querySelector('[data-datapag]').value
+          })
+        });
+        const res = await fetch(API_URL + '?action=planosCliente&id_cliente=' + encodeURIComponent(fichaClienteAtual.id_cliente));
+        const planosAtualizados = await res.json();
+        renderFichaPlanos(planosAtualizados);
+      }catch(err){
+        btn.disabled = false; btn.textContent = 'Salvar pagamento';
+        alert('Não foi possível salvar: ' + err.message);
+      }
+    });
+
     box.appendChild(card);
   });
 }
