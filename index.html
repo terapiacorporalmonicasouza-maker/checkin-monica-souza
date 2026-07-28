@@ -7,7 +7,7 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#FAF4EC">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Frank+Ruhl+Libre:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Frank+Ruhl+Libre:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
     /* Paleta oficial da marca (extraída da logo) */
@@ -175,33 +175,19 @@
 <body>
 
 <!-- Tela 0a: PIN -->
-<div class="screen active" id="screen-staff">
-  <img src="logo-simbolo.png" alt="Mônica Souza" width="52" height="52" style="margin-bottom:4px;">
-  <div>
-    <div class="staff-label">Acesso da equipe</div>
-    <div class="staff-title">Digite o PIN</div>
-  </div>
-  <div class="pin-dots" id="pinDots">
-    <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
-  </div>
-  <div class="pin-error" id="pinError"></div>
-  <div class="pin-pad" id="pinPad">
-    <button>1</button><button>2</button><button>3</button>
-    <button>4</button><button>5</button><button>6</button>
-    <button>7</button><button>8</button><button>9</button>
-    <button class="empty"></button><button>0</button><button>&#9003;</button>
-  </div>
-  <button id="btnFullscreen" style="margin-top:6px; border:none; background:none; color:var(--staff-text-soft); font-size:12px; text-decoration:underline; cursor:pointer; font-family:inherit;">Ativar tela cheia</button>
-</div>
-
 <!-- Tela 0b: lista interna -->
-<div class="screen" id="screen-list" style="padding:0; align-items:stretch;">
+<div class="screen active" id="screen-list" style="padding:0; align-items:stretch;">
   <div style="padding:26px 32px 10px; flex-shrink:0;">
-    <div class="list-eyebrow">Painel interno &middot; não mostrar à cliente</div>
+    <div class="list-eyebrow">Painel interno &middot; não mostrar à cliente &middot; <button id="btnFullscreen" style="border:none; background:none; color:inherit; text-decoration:underline; cursor:pointer; font-family:inherit; font-size:inherit; padding:0;">tela cheia</button></div>
     <div class="list-title">Minhas clientes</div>
     <input type="text" id="clientSearch" class="nc-input" placeholder="🔍 Buscar cliente..." style="width:100%; margin-top:12px; box-sizing:border-box;">
   </div>
   <div style="flex:1; overflow:auto; padding:8px 32px 20px;">
+    <div id="rascunhoBanner" style="display:none; align-items:center; gap:10px; background:var(--gold-soft); border:1.5px solid var(--gold); border-radius:14px; padding:12px 16px; margin-bottom:14px;">
+      <div style="flex:1; font-size:14px; color:var(--accent-dark);" id="rascunhoTexto"></div>
+      <button class="btn-ghost" id="btnDescartarRascunho" style="padding:8px 14px; font-size:13px; border-color:var(--staff-border); color:var(--staff-text);">Descartar</button>
+      <button class="btn-primary" id="btnRetomarRascunho" style="padding:10px 16px; min-height:auto; font-size:13px; margin-top:0;">Continuar</button>
+    </div>
     <div class="loading-msg" id="loadingMsg" style="display:none;">Carregando clientes...</div>
     <div class="client-rows" id="clientRows"></div>
   </div>
@@ -579,7 +565,7 @@
 
 <script>
 // ===== CONFIGURAÇÃO =====
-const API_URL = 'https://script.google.com/macros/s/AKfycbwDtzU27MYf1QOlT0SzHfoSP5sIOWMUFmlSXig8XlVS1C_LsprZ8hUmMqeJ5Ydk-u89/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyL9uaRZHvtkLtm3aRRMF83VDUSgOBVdVcwyn2MbvZqHcEXqR0j81227hwM8C5QjRop5g/exec';
 
 const REGION_DEFS_FRONT = [
   { key: 'F_cervical', label: 'Cervical', d: 'M107.3,193.0 L141.5,193.0 L135.9,211.1 L113.0,211.1 Z' },
@@ -690,17 +676,6 @@ let selectedRegions = new Set();
 let intensity = 5;
 let currentIdSessao = null;
 
-// ---- PIN ----
-let pin = '';
-document.getElementById('pinPad').addEventListener('click', e=>{
-  if(e.target.tagName !== 'BUTTON' || e.target.classList.contains('empty')) return;
-  const val = e.target.textContent;
-  if(val === chr(9003)){ pin = pin.slice(0,-1); }
-  else if(pin.length < 4){ pin += val; }
-  updatePinDots();
-  if(pin.length === 4) checarPin();
-});
-function chr(code){ return String.fromCharCode(code); }
 document.getElementById('btnFullscreen').addEventListener('click', ()=>{
   if(!document.fullscreenElement){
     if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(function(){});
@@ -708,33 +683,6 @@ document.getElementById('btnFullscreen').addEventListener('click', ()=>{
     if(document.exitFullscreen) document.exitFullscreen();
   }
 });
-function updatePinDots(){
-  document.querySelectorAll('#pinDots .pin-dot').forEach((d,i)=> d.classList.toggle('filled', i < pin.length));
-}
-function shakePin(){
-  const dots = document.getElementById('pinDots');
-  dots.style.animation = 'shakeErr 0.4s ease';
-  setTimeout(()=> dots.style.animation = '', 400);
-}
-
-async function checarPin(){
-  try{
-    const res = await fetch(API_URL + '?action=validatePin&pin=' + pin);
-    const data = await res.json();
-    if(data.valid){
-      document.getElementById('pinError').textContent = '';
-      pin = ''; updatePinDots();
-      go('list');
-      carregarClientes();
-    } else {
-      document.getElementById('pinError').textContent = 'PIN incorreto.';
-      shakePin();
-      setTimeout(()=>{ pin=''; updatePinDots(); document.getElementById('pinError').textContent=''; }, 700);
-    }
-  }catch(err){
-    document.getElementById('pinError').textContent = 'Não foi possível conectar. Verifique a URL da API.';
-  }
-}
 
 let todasClientes = [];
 
@@ -1218,14 +1166,20 @@ function renderBodyMap(){
       svgPaths +
     '</svg>';
   container.querySelectorAll('.region-path').forEach(p=>{
-    p.addEventListener('click', ()=>{
-      const key = p.getAttribute('data-key');
-      if(selectedRegions.has(key)) selectedRegions.delete(key);
-      else selectedRegions.add(key);
-      renderBodyMap();
-      renderCheckinChips();
-    });
+    p.addEventListener('click', ()=> toggleRegion(p));
   });
+  renderCheckinChips();
+}
+
+// Só troca a cor da região tocada em vez de redesenhar o mapa inteiro —
+// bem mais rápido, principalmente em tablets mais simples.
+function toggleRegion(pathEl){
+  const key = pathEl.getAttribute('data-key');
+  if(selectedRegions.has(key)) selectedRegions.delete(key);
+  else selectedRegions.add(key);
+  const on = selectedRegions.has(key);
+  pathEl.setAttribute('fill', on ? '#C98A2A' : 'transparent');
+  pathEl.setAttribute('fill-opacity', on ? '0.65' : '0');
   renderCheckinChips();
 }
 
@@ -1435,6 +1389,66 @@ let regRealizadoSet = new Set();
 let regAtencaoSet = new Set();
 let regAcompanharAtivo = false;
 
+// ---- Rascunho automático (protege contra perda de dados se a tela fechar sozinha) ----
+const RASCUNHO_KEY = 'registroRascunhoV1';
+
+function salvarRascunhoRegistro(){
+  if(!currentIdSessao || !currentPlan) return;
+  const rascunho = {
+    id_sessao: currentIdSessao,
+    cliente: {
+      id_cliente: currentPlan.id_cliente, nome: currentPlan.nome, tipo: currentPlan.tipo,
+      id_plano: currentPlan.id_plano, total_sessoes: currentPlan.total_sessoes, sessoes_realizadas: currentPlan.sessoes_realizadas
+    },
+    chegada: regChegadaValor, saida: regSaidaValor, pressao: regPressaoValor,
+    pressaoCustom: document.getElementById('regPressaoCustom').value,
+    contexto: Array.from(regContextoSet), realizado: Array.from(regRealizadoSet), atencao: Array.from(regAtencaoSet),
+    observarTexto: document.getElementById('regObservarTexto').value,
+    observarAtivo: regAcompanharAtivo,
+    insightCliente: document.getElementById('regInsightCliente').value,
+    savedAt: Date.now()
+  };
+  try{ localStorage.setItem(RASCUNHO_KEY, JSON.stringify(rascunho)); }catch(err){ /* localStorage indisponível — segue sem rascunho */ }
+}
+
+function limparRascunhoRegistro(){
+  try{ localStorage.removeItem(RASCUNHO_KEY); }catch(err){ /* ... */ }
+}
+
+function lerRascunhoRegistro(){
+  try{
+    const raw = localStorage.getItem(RASCUNHO_KEY);
+    if(!raw) return null;
+    const r = JSON.parse(raw);
+    if(Date.now() - r.savedAt > 12 * 60 * 60 * 1000) { limparRascunhoRegistro(); return null; } // ignora rascunho com mais de 12h
+    return r;
+  }catch(err){ return null; }
+}
+
+function verificarRascunhoPendente(){
+  const r = lerRascunhoRegistro();
+  const banner = document.getElementById('rascunhoBanner');
+  if(r){
+    document.getElementById('rascunhoTexto').textContent = 'Encontramos um registro não finalizado de ' + r.cliente.nome + '.';
+    banner.style.display = 'flex';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+document.getElementById('btnRetomarRascunho').addEventListener('click', ()=>{
+  const r = lerRascunhoRegistro();
+  if(!r) return;
+  currentPlan = r.cliente;
+  currentIdSessao = r.id_sessao;
+  abrirRegistroTerapeuta(r);
+});
+
+document.getElementById('btnDescartarRascunho').addEventListener('click', ()=>{
+  limparRascunhoRegistro();
+  document.getElementById('rascunhoBanner').style.display = 'none';
+});
+
 function renderEmojiRow(containerId, opcoes, getValor, setValor){
   const box = document.getElementById(containerId);
   box.innerHTML = '';
@@ -1446,6 +1460,7 @@ function renderEmojiRow(containerId, opcoes, getValor, setValor){
       setValor(o.v);
       box.querySelectorAll('.emoji-btn').forEach(x=>x.classList.remove('selected'));
       b.classList.add('selected');
+      salvarRascunhoRegistro();
     };
     box.appendChild(b);
   });
@@ -1458,58 +1473,76 @@ function renderChipMulti(containerId, opcoes, selectedSet){
     const b = document.createElement('button');
     b.className = 'chip-select';
     b.textContent = nome;
+    if(selectedSet.has(nome)) b.classList.add('selected');
     b.onclick = ()=>{
       if(selectedSet.has(nome)) selectedSet.delete(nome);
       else selectedSet.add(nome);
       b.classList.toggle('selected');
+      salvarRascunhoRegistro();
     };
     box.appendChild(b);
   });
 }
 
-function renderPressao(){
+function renderPressao(valorInicial){
   const box = document.getElementById('regPressao');
   box.innerHTML = '';
   const customBox = document.getElementById('regPressaoCustom');
   PRESSAO_OPCOES.forEach(nome=>{
     const b = document.createElement('button');
-    b.className = 'chip-select';
+    b.className = 'chip-select' + (valorInicial === nome ? ' selected' : '');
     b.textContent = nome;
     b.onclick = ()=>{
       regPressaoValor = nome;
       box.querySelectorAll('.chip-select').forEach(x=>x.classList.remove('selected'));
       b.classList.add('selected');
       customBox.style.display = nome === 'Personalizada' ? 'block' : 'none';
+      salvarRascunhoRegistro();
     };
     box.appendChild(b);
   });
-  customBox.style.display = 'none';
-  customBox.value = '';
+  customBox.style.display = valorInicial === 'Personalizada' ? 'block' : 'none';
 }
 
-function abrirRegistroTerapeuta(){
+function abrirRegistroTerapeuta(rascunho){
   document.getElementById('registroTitulo').textContent = 'Registro — ' + currentPlan.nome;
-  regChegadaValor = ''; regSaidaValor = ''; regPressaoValor = '';
-  regContextoSet = new Set(); regRealizadoSet = new Set(); regAtencaoSet = new Set();
-  regAcompanharAtivo = false;
+
+  if(rascunho){
+    regChegadaValor = rascunho.chegada || ''; regSaidaValor = rascunho.saida || ''; regPressaoValor = rascunho.pressao || '';
+    regContextoSet = new Set(rascunho.contexto || []);
+    regRealizadoSet = new Set(rascunho.realizado || []);
+    regAtencaoSet = new Set(rascunho.atencao || []);
+    regAcompanharAtivo = !!rascunho.observarAtivo;
+  } else {
+    regChegadaValor = ''; regSaidaValor = ''; regPressaoValor = '';
+    regContextoSet = new Set(); regRealizadoSet = new Set(); regAtencaoSet = new Set();
+    regAcompanharAtivo = false;
+  }
 
   renderEmojiRow('regChegada', CHEGADA_OPCOES, ()=>regChegadaValor, v=>regChegadaValor=v);
   renderEmojiRow('regSaida', SAIDA_OPCOES, ()=>regSaidaValor, v=>regSaidaValor=v);
   renderChipMulti('regContexto', CONTEXTO_DIA_OPCOES, regContextoSet);
   renderChipMulti('regRealizado', REALIZADO_OPCOES, regRealizadoSet);
   renderChipMulti('regAtencao', ATENCAO_OPCOES, regAtencaoSet);
-  renderPressao();
+  renderPressao(rascunho ? rascunho.pressao : null);
 
-  document.getElementById('regObservarTexto').value = '';
-  document.getElementById('regInsightCliente').value = '';
-  document.getElementById('btnAcompanhar').classList.remove('active');
+  document.getElementById('regPressaoCustom').value = rascunho ? (rascunho.pressaoCustom || '') : '';
+  document.getElementById('regObservarTexto').value = rascunho ? (rascunho.observarTexto || '') : '';
+  document.getElementById('regInsightCliente').value = rascunho ? (rascunho.insightCliente || '') : '';
+  document.getElementById('btnAcompanhar').classList.toggle('active', regAcompanharAtivo);
 
+  document.getElementById('rascunhoBanner').style.display = 'none';
   go('registro');
 }
 
 document.getElementById('btnAcompanhar').addEventListener('click', ()=>{
   regAcompanharAtivo = !regAcompanharAtivo;
   document.getElementById('btnAcompanhar').classList.toggle('active', regAcompanharAtivo);
+  salvarRascunhoRegistro();
+});
+
+['regPressaoCustom','regObservarTexto','regInsightCliente'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', salvarRascunhoRegistro);
 });
 
 document.getElementById('btnSaveRegistro').addEventListener('click', async ()=>{
@@ -1540,7 +1573,8 @@ document.getElementById('btnSaveRegistro').addEventListener('click', async ()=>{
         insight_cliente: document.getElementById('regInsightCliente').value.trim()
       })
     });
-  }catch(err){ /* segue o fluxo mesmo se falhar — não trava o dia da terapeuta */ }
+    limparRascunhoRegistro();
+  }catch(err){ /* segue o fluxo mesmo se falhar — não trava o dia da terapeuta; o rascunho continua salvo */ }
   currentPlan = null; currentIdSessao = null;
   btn.disabled = false; btn.textContent = 'Salvar e voltar para a lista';
   go('list');
@@ -1570,19 +1604,14 @@ async function abrirFicha(c){
   go('ficha');
 
   try{
-    const res3 = await fetch(API_URL + '?action=planosCliente&id_cliente=' + encodeURIComponent(c.id_cliente));
-    const planos = await res3.json();
-    if(planos && planos.error) throw new Error(planos.error);
-    if(!Array.isArray(planos)) throw new Error('resposta inesperada da API: ' + JSON.stringify(planos).slice(0,200));
-    renderFichaPlanos(planos);
-  }catch(err){
-    console.error('Erro ao carregar planos de', c.id_cliente, err);
-    document.getElementById('fichaPlanos').innerHTML = '<div class="history-empty">Não foi possível carregar os planos: ' + err.message + '</div>';
-  }
+    const res = await fetch(API_URL + '?action=fichaCompleta&id_cliente=' + encodeURIComponent(c.id_cliente));
+    const dados = await res.json();
+    if(dados.error) throw new Error(dados.error);
 
-  try{
-    const res = await fetch(API_URL + '?action=fichaClinica&id_cliente=' + encodeURIComponent(c.id_cliente));
-    const f = await res.json();
+    if(dados.planos && dados.planos.error) throw new Error(dados.planos.error);
+    renderFichaPlanos(Array.isArray(dados.planos) ? dados.planos : []);
+
+    const f = dados.ficha || {};
     document.getElementById('fcProfissao').value = f.profissao || '';
     document.getElementById('fcIdade').value = f.idade || '';
     document.getElementById('fcTelefone').value = f.telefone || '';
@@ -1596,14 +1625,12 @@ async function abrirFicha(c){
     document.getElementById('fcAtividades').value = f.atividades_fisicas || '';
     document.getElementById('fcRestricoes').value = f.restricoes || '';
     document.getElementById('fcObservacoes').value = f.observacoes_gerais || '';
-  }catch(err){ /* ficha pode não existir ainda — segue com campos em branco */ }
 
-  try{
-    const res2 = await fetch(API_URL + '?action=historyStaff&id_cliente=' + encodeURIComponent(c.id_cliente));
-    const sessoes = await res2.json();
-    renderFichaHistorico(sessoes);
+    renderFichaHistorico(Array.isArray(dados.historico) ? dados.historico : []);
   }catch(err){
-    document.getElementById('fichaHistorico').innerHTML = '<div class="history-empty">Não foi possível carregar o histórico.</div>';
+    console.error('Erro ao carregar ficha de', c.id_cliente, err);
+    document.getElementById('fichaPlanos').innerHTML = '<div class="history-empty">Não foi possível carregar: ' + err.message + '</div>';
+    document.getElementById('fichaHistorico').innerHTML = '';
   }
 }
 
@@ -1772,6 +1799,10 @@ document.getElementById('btnSaveFicha').addEventListener('click', async ()=>{
   }catch(err){ /* ... */ }
   btn.disabled = false; btn.textContent = 'Salvar ficha';
 });
+
+// Sem tela de PIN — carrega a lista direto ao abrir o app.
+carregarClientes();
+verificarRascunhoPendente();
 </script>
 </body>
 </html>
