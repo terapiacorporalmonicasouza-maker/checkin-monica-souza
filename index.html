@@ -204,6 +204,11 @@
   <div class="newclient-form">
     <label class="nc-label">Nome completo</label>
     <input type="text" id="ncNome" class="nc-input" placeholder="Nome da cliente">
+    <label class="nc-label" style="margin-top:14px;">Gênero</label>
+    <div class="view-toggle" id="ncSexoToggle">
+      <button data-sexo="feminino" class="active">Feminino</button>
+      <button data-sexo="masculino">Masculino</button>
+    </div>
     <div class="nc-label" style="margin-top:14px; line-height:1.5;">Depois de salvar, use "+ Novo plano" na lista para dar a ela um plano de sessões.</div>
     <div class="error-msg" id="ncError" style="display:none;"></div>
   </div>
@@ -252,6 +257,15 @@
 
     <label class="nc-label">Data do pagamento (opcional)</label>
     <input type="date" id="npDataPagamento" class="nc-input">
+
+    <label class="nc-label">Forma de pagamento (opcional)</label>
+    <select id="npFormaPagamento" class="nc-input">
+      <option value="">Não informar</option>
+      <option value="PIX">PIX</option>
+      <option value="Dinheiro">Dinheiro</option>
+      <option value="Cartão">Cartão</option>
+      <option value="Outros">Outros</option>
+    </select>
 
     <div class="error-msg" id="npError" style="display:none;"></div>
   </div>
@@ -340,10 +354,21 @@
   </div>
 </div>
 
+<!-- Tela: escolha do tipo (atendimento avulso) -->
+<div class="screen" id="screen-avulso-tipo" style="background:var(--staff-bg); color:var(--staff-text); align-items:center; justify-content:center; gap:20px; padding:40px; text-align:center;">
+  <div class="list-eyebrow">Painel interno &middot; atendimento avulso</div>
+  <div class="list-title" id="avulsoTipoTitulo" style="font-size:22px;">Qual o tipo de atendimento?</div>
+  <div style="display:flex; gap:14px; width:100%; max-width:420px;">
+    <button class="chip-select" data-avulsotipo="terapeutico" style="flex:1; padding:22px; font-size:16px;">Massagem Terapêutica</button>
+    <button class="chip-select" data-avulsotipo="drenagem" style="flex:1; padding:22px; font-size:16px;">Drenagem Linfática</button>
+  </div>
+  <button class="btn-ghost" id="btnCancelarAvulso" style="border-color:var(--staff-border); color:var(--staff-text);">Cancelar</button>
+</div>
+
 <!-- Tela 1: boas-vindas -->
 <div class="screen" id="screen-welcome">
   <img src="logo-simbolo.png" alt="Mônica Souza" width="36" height="36" style="margin-bottom:6px;">
-  <div class="eyebrow">Bem-vinda</div>
+  <div class="eyebrow" id="welcomeEyebrow">Bem-vinda</div>
   <div class="greeting" id="greetName">&nbsp;</div>
   <div class="plan-sub" id="planSub">&nbsp;</div>
   <div class="gentle-note" id="gentleNote"></div>
@@ -508,6 +533,19 @@
     <div class="registro-section-label">Insight da cliente (opcional)</div>
     <input type="text" id="regInsightCliente" class="nc-input" placeholder='Ex: "Dormi muito melhor"' maxlength="140">
 
+    <div id="regAvulsoPagamentoBlock" style="display:none;">
+      <div class="registro-section-label">Valor cobrado (R$)</div>
+      <input type="number" id="regValorCobrado" class="nc-input" placeholder="Ex: 180" min="0" step="0.01">
+      <div class="registro-section-label">Forma de pagamento</div>
+      <select id="regFormaPagamentoAvulso" class="nc-input">
+        <option value="">Não informar</option>
+        <option value="PIX">PIX</option>
+        <option value="Dinheiro">Dinheiro</option>
+        <option value="Cartão">Cartão</option>
+        <option value="Outros">Outros</option>
+      </select>
+    </div>
+
   </div>
   <button class="btn-primary" id="btnSaveRegistro" style="margin-top:14px;">Salvar e voltar para a lista</button>
 </div>
@@ -520,6 +558,7 @@
   <div style="margin:14px 0;">
     <button class="btn-primary" id="btnIniciarAtendimentoFicha" style="display:none; width:100%; margin-top:0;">Iniciar atendimento</button>
     <button class="btn-primary" id="btnCriarNovoPlanoFicha" style="display:none; width:100%; margin-top:0;">+ Criar novo plano</button>
+    <button class="btn-ghost" id="btnAtendimentoAvulso" style="width:100%; border-color:var(--staff-border); color:var(--staff-text); margin-top:8px;">Atendimento avulso (sem plano)</button>
   </div>
 
   <div class="newclient-form" style="overflow:auto; flex:1;">
@@ -569,100 +608,100 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbyL9uaRZHvtkLtm3aRRMF83
 
 const REGION_DEFS_FRONT = [
   { key: 'F_cervical', label: 'Cervical', d: 'M107.3,193.0 L141.5,193.0 L135.9,211.1 L113.0,211.1 Z' },
-  { key: 'F_trapD', label: 'Trapézio direito', d: 'M107.3,193.0 L75.8,196.2 Q44.4,204.5 32.9,222.6 L72.9,229.1 Q90.0,212.7 113.0,211.1 Z' },
-  { key: 'F_trapE', label: 'Trapézio esquerdo', d: 'M141.5,193.0 L173.1,196.2 Q204.5,204.5 215.9,222.6 L175.9,229.1 Q158.8,212.7 135.9,211.1 Z' },
-  { key: 'F_ombroD', label: 'Ombro direito', d: 'M32.9,222.6 Q21.5,242.3 29.9,260.3 L70.1,257.1 Q64.3,239.0 72.9,229.1 Z' },
-  { key: 'F_ombroE', label: 'Ombro esquerdo', d: 'M215.9,222.6 Q227.4,242.3 218.9,260.3 L178.7,257.1 Q184.5,239.0 175.9,229.1 Z' },
-  { key: 'F_peitoralD', label: 'Peitoral direito', d: 'M72.9,229.1 L64.3,257.1 Q58.7,286.7 81.6,299.8 L121.6,296.5 L121.6,219.2 Q92.9,221.0 72.9,229.1 Z' },
-  { key: 'F_peitoralE', label: 'Peitoral esquerdo', d: 'M175.9,229.1 L184.5,257.1 Q190.2,286.7 167.3,299.8 L127.2,296.5 L127.2,219.2 Q156.0,221.0 175.9,229.1 Z' },
-  { key: 'F_bracoD', label: 'Braço direito', d: 'M29.9,260.3 L70.1,257.1 L61.5,327.8 L21.5,331.1 Z' },
-  { key: 'F_bracoE', label: 'Braço esquerdo', d: 'M218.9,260.3 L178.7,257.1 L187.3,327.8 L227.4,331.1 Z' },
-  { key: 'F_antebracoD', label: 'Antebraço direito', d: 'M21.5,331.1 L61.5,327.8 L52.8,392.0 L15.7,395.2 Z' },
-  { key: 'F_antebracoE', label: 'Antebraço esquerdo', d: 'M227.4,331.1 L187.3,327.8 L196.0,392.0 L233.2,395.2 Z' },
-  { key: 'F_punhoD', label: 'Punho direito', d: 'M15.7,395.2 L52.8,392.0 L47.2,419.9 L10.0,423.2 Z' },
-  { key: 'F_punhoE', label: 'Punho esquerdo', d: 'M233.2,395.2 L196.0,392.0 L198.8,419.9 L236.0,423.2 Z' },
+  { key: 'F_trapE', label: 'Trapézio esquerdo', d: 'M107.3,193.0 L75.8,196.2 Q44.4,204.5 32.9,222.6 L72.9,229.1 Q90.0,212.7 113.0,211.1 Z' },
+  { key: 'F_trapD', label: 'Trapézio direito', d: 'M141.5,193.0 L173.1,196.2 Q204.5,204.5 215.9,222.6 L175.9,229.1 Q158.8,212.7 135.9,211.1 Z' },
+  { key: 'F_ombroE', label: 'Ombro esquerdo', d: 'M32.9,222.6 Q21.5,242.3 29.9,260.3 L70.1,257.1 Q64.3,239.0 72.9,229.1 Z' },
+  { key: 'F_ombroD', label: 'Ombro direito', d: 'M215.9,222.6 Q227.4,242.3 218.9,260.3 L178.7,257.1 Q184.5,239.0 175.9,229.1 Z' },
+  { key: 'F_peitoralE', label: 'Peitoral esquerdo', d: 'M72.9,229.1 L64.3,257.1 Q58.7,286.7 81.6,299.8 L121.6,296.5 L121.6,219.2 Q92.9,221.0 72.9,229.1 Z' },
+  { key: 'F_peitoralD', label: 'Peitoral direito', d: 'M175.9,229.1 L184.5,257.1 Q190.2,286.7 167.3,299.8 L127.2,296.5 L127.2,219.2 Q156.0,221.0 175.9,229.1 Z' },
+  { key: 'F_bracoE', label: 'Braço esquerdo', d: 'M29.9,260.3 L70.1,257.1 L61.5,327.8 L21.5,331.1 Z' },
+  { key: 'F_bracoD', label: 'Braço direito', d: 'M218.9,260.3 L178.7,257.1 L187.3,327.8 L227.4,331.1 Z' },
+  { key: 'F_antebracoE', label: 'Antebraço esquerdo', d: 'M21.5,331.1 L61.5,327.8 L52.8,392.0 L15.7,395.2 Z' },
+  { key: 'F_antebracoD', label: 'Antebraço direito', d: 'M227.4,331.1 L187.3,327.8 L196.0,392.0 L233.2,395.2 Z' },
+  { key: 'F_punhoE', label: 'Punho esquerdo', d: 'M15.7,395.2 L52.8,392.0 L47.2,419.9 L10.0,423.2 Z' },
+  { key: 'F_punhoD', label: 'Punho direito', d: 'M233.2,395.2 L196.0,392.0 L198.8,419.9 L236.0,423.2 Z' },
   { key: 'F_abdomen', label: 'Abdômen', d: 'M81.6,299.8 L121.6,296.5 L127.2,296.5 L167.3,299.8 Q178.7,321.2 164.4,342.7 L121.6,349.2 L84.4,342.7 Q70.1,321.2 81.6,299.8 Z' },
-  { key: 'F_quadrilD', label: 'Quadril direito', d: 'M84.4,342.7 L121.6,349.2 L118.8,373.8 L70.1,377.1 Q58.7,360.7 67.1,347.5 Z' },
-  { key: 'F_quadrilE', label: 'Quadril esquerdo', d: 'M164.4,342.7 L127.2,349.2 L130.1,373.8 L178.7,377.1 Q190.2,360.7 181.7,347.5 Z' },
-  { key: 'F_coxaAntD', label: 'Coxa anterior direita', d: 'M70.1,377.1 L118.8,373.8 L110.1,484.0 L61.5,485.6 Z' },
-  { key: 'F_coxaAntE', label: 'Coxa anterior esquerda', d: 'M178.7,377.1 L130.1,373.8 L138.7,484.0 L187.3,485.6 Z' },
-  { key: 'F_joelhoD', label: 'Joelho direito', d: 'M61.5,485.6 L110.1,484.0 L107.3,510.3 L64.3,511.9 Z' },
-  { key: 'F_joelhoE', label: 'Joelho esquerdo', d: 'M187.3,485.6 L138.7,484.0 L141.5,510.3 L184.5,511.9 Z' },
-  { key: 'F_panturrilhaD', label: 'Panturrilha direita', d: 'M64.3,511.9 L107.3,510.3 L98.7,607.3 L72.9,609.0 Z' },
-  { key: 'F_panturrilhaE', label: 'Panturrilha esquerda', d: 'M184.5,511.9 L141.5,510.3 L150.2,607.3 L175.9,609.0 Z' },
-  { key: 'F_tornozeloD', label: 'Tornozelo direito', d: 'M72.9,609.0 L98.7,607.3 L95.8,625.4 L75.8,627.1 Z' },
-  { key: 'F_tornozeloE', label: 'Tornozelo esquerdo', d: 'M175.9,609.0 L150.2,607.3 L153.0,625.4 L173.1,627.1 Z' },
-  { key: 'F_peD', label: 'Pé direito', d: 'M75.8,627.1 L95.8,625.4 L107.3,646.8 L81.6,653.3 L55.7,648.4 Z' },
-  { key: 'F_peE', label: 'Pé esquerdo', d: 'M173.1,627.1 L153.0,625.4 L141.5,646.8 L167.3,653.3 L193.2,648.4 Z' },
+  { key: 'F_quadrilE', label: 'Quadril esquerdo', d: 'M84.4,342.7 L121.6,349.2 L118.8,373.8 L70.1,377.1 Q58.7,360.7 67.1,347.5 Z' },
+  { key: 'F_quadrilD', label: 'Quadril direito', d: 'M164.4,342.7 L127.2,349.2 L130.1,373.8 L178.7,377.1 Q190.2,360.7 181.7,347.5 Z' },
+  { key: 'F_coxaAntE', label: 'Coxa anterior esquerda', d: 'M70.1,377.1 L118.8,373.8 L110.1,484.0 L61.5,485.6 Z' },
+  { key: 'F_coxaAntD', label: 'Coxa anterior direita', d: 'M178.7,377.1 L130.1,373.8 L138.7,484.0 L187.3,485.6 Z' },
+  { key: 'F_joelhoE', label: 'Joelho esquerdo', d: 'M61.5,485.6 L110.1,484.0 L107.3,510.3 L64.3,511.9 Z' },
+  { key: 'F_joelhoD', label: 'Joelho direito', d: 'M187.3,485.6 L138.7,484.0 L141.5,510.3 L184.5,511.9 Z' },
+  { key: 'F_panturrilhaE', label: 'Panturrilha esquerda', d: 'M64.3,511.9 L107.3,510.3 L98.7,607.3 L72.9,609.0 Z' },
+  { key: 'F_panturrilhaD', label: 'Panturrilha direita', d: 'M184.5,511.9 L141.5,510.3 L150.2,607.3 L175.9,609.0 Z' },
+  { key: 'F_tornozeloE', label: 'Tornozelo esquerdo', d: 'M72.9,609.0 L98.7,607.3 L95.8,625.4 L75.8,627.1 Z' },
+  { key: 'F_tornozeloD', label: 'Tornozelo direito', d: 'M175.9,609.0 L150.2,607.3 L153.0,625.4 L173.1,627.1 Z' },
+  { key: 'F_peE', label: 'Pé esquerdo', d: 'M75.8,627.1 L95.8,625.4 L107.3,646.8 L81.6,653.3 L55.7,648.4 Z' },
+  { key: 'F_peD', label: 'Pé direito', d: 'M173.1,627.1 L153.0,625.4 L141.5,646.8 L167.3,653.3 L193.2,648.4 Z' },
 ];
 
 const REGION_DEFS_BACK = [
   { key: 'B_cervical', label: 'Cervical', d: 'M87.0,193.0 L117.6,193.0 L112.5,211.0 L92.0,211.0 Z' },
-  { key: 'B_trapD', label: 'Trapézio direito', d: 'M87.0,193.0 L58.8,196.2 Q30.7,204.4 20.5,222.4 L56.3,228.9 Q71.5,212.6 92.0,211.0 Z' },
-  { key: 'B_trapE', label: 'Trapézio esquerdo', d: 'M117.6,193.0 L145.7,196.2 Q173.8,204.4 184.0,222.4 L148.3,228.9 Q133.0,212.6 112.5,211.0 Z' },
-  { key: 'B_ombroD', label: 'Ombro direito', d: 'M20.5,222.4 Q10.2,241.9 17.8,259.9 L53.7,256.6 Q48.5,238.7 56.3,228.9 Z' },
-  { key: 'B_ombroE', label: 'Ombro esquerdo', d: 'M184.0,222.4 Q194.3,241.9 186.7,259.9 L150.8,256.6 Q156.0,238.7 148.3,228.9 Z' },
+  { key: 'B_trapE', label: 'Trapézio esquerdo', d: 'M87.0,193.0 L58.8,196.2 Q30.7,204.4 20.5,222.4 L56.3,228.9 Q71.5,212.6 92.0,211.0 Z' },
+  { key: 'B_trapD', label: 'Trapézio direito', d: 'M117.6,193.0 L145.7,196.2 Q173.8,204.4 184.0,222.4 L148.3,228.9 Q133.0,212.6 112.5,211.0 Z' },
+  { key: 'B_ombroE', label: 'Ombro esquerdo', d: 'M20.5,222.4 Q10.2,241.9 17.8,259.9 L53.7,256.6 Q48.5,238.7 56.3,228.9 Z' },
+  { key: 'B_ombroD', label: 'Ombro direito', d: 'M184.0,222.4 Q194.3,241.9 186.7,259.9 L150.8,256.6 Q156.0,238.7 148.3,228.9 Z' },
   { key: 'B_costasSup', label: 'Costas superiores', d: 'M56.3,228.9 L148.3,228.9 Q150.8,261.6 138.0,279.5 L66.5,279.5 Q53.7,261.6 56.3,228.9 Z' },
   { key: 'B_costasMed', label: 'Costas médias', d: 'M66.5,279.5 L138.0,279.5 Q143.2,299.1 133.0,312.1 L71.5,312.1 Q61.3,299.1 66.5,279.5 Z' },
-  { key: 'B_bracoD', label: 'Braço direito', d: 'M17.8,259.9 L53.7,256.6 L46.0,326.8 L10.2,330.1 Z' },
-  { key: 'B_bracoE', label: 'Braço esquerdo', d: 'M186.7,259.9 L150.8,256.6 L158.5,326.8 L194.3,330.1 Z' },
-  { key: 'B_antebracoD', label: 'Antebraço direito', d: 'M10.2,330.1 L46.0,326.8 L38.3,390.5 L5.1,393.7 Z' },
-  { key: 'B_antebracoE', label: 'Antebraço esquerdo', d: 'M194.3,330.1 L158.5,326.8 L166.2,390.5 L199.5,393.7 Z' },
-  { key: 'B_punhoD', label: 'Punho direito', d: 'M5.1,393.7 L38.3,390.5 L33.2,418.2 L0.0,421.5 Z' },
-  { key: 'B_punhoE', label: 'Punho esquerdo', d: 'M199.5,393.7 L166.2,390.5 L168.8,418.2 L202.0,421.5 Z' },
+  { key: 'B_bracoE', label: 'Braço esquerdo', d: 'M17.8,259.9 L53.7,256.6 L46.0,326.8 L10.2,330.1 Z' },
+  { key: 'B_bracoD', label: 'Braço direito', d: 'M186.7,259.9 L150.8,256.6 L158.5,326.8 L194.3,330.1 Z' },
+  { key: 'B_antebracoE', label: 'Antebraço esquerdo', d: 'M10.2,330.1 L46.0,326.8 L38.3,390.5 L5.1,393.7 Z' },
+  { key: 'B_antebracoD', label: 'Antebraço direito', d: 'M194.3,330.1 L158.5,326.8 L166.2,390.5 L199.5,393.7 Z' },
+  { key: 'B_punhoE', label: 'Punho esquerdo', d: 'M5.1,393.7 L38.3,390.5 L33.2,418.2 L0.0,421.5 Z' },
+  { key: 'B_punhoD', label: 'Punho direito', d: 'M199.5,393.7 L166.2,390.5 L168.8,418.2 L202.0,421.5 Z' },
   { key: 'B_lombar', label: 'Lombar', d: 'M71.5,312.1 L133.0,312.1 Q138.0,331.7 127.8,341.6 L76.7,341.6 Q66.5,331.7 71.5,312.1 Z' },
-  { key: 'B_quadrilD', label: 'Quadril direito', d: 'M81.8,366.0 L53.7,375.8 Q46.0,387.2 53.7,400.3 L94.6,397.1 L89.5,372.6 Z' },
-  { key: 'B_quadrilE', label: 'Quadril esquerdo', d: 'M122.7,366.0 L150.8,375.8 Q158.5,387.2 150.8,400.3 L110.0,397.1 L115.0,372.6 Z' },
-  { key: 'B_gluteoD', label: 'Glúteo direito', d: 'M53.7,375.9 L94.6,372.7 L90.7,403.6 L48.5,406.9 Z' },
-  { key: 'B_gluteoE', label: 'Glúteo esquerdo', d: 'M150.8,375.9 L110.0,372.7 L113.8,403.6 L156.0,406.9 Z' },
-  { key: 'B_coxaPostD', label: 'Coxa posterior direita', d: 'M48.5,431.3 L90.7,428.0 L89.5,481.9 L46.0,483.6 Z' },
-  { key: 'B_coxaPostE', label: 'Coxa posterior esquerda', d: 'M156.0,431.3 L113.8,428.0 L115.0,481.9 L158.5,483.6 Z' },
-  { key: 'B_joelhoD', label: 'Joelho direito', d: 'M46.0,483.6 L89.5,481.9 L87.0,508.1 L48.5,509.7 Z' },
-  { key: 'B_joelhoE', label: 'Joelho esquerdo', d: 'M158.5,483.6 L115.0,481.9 L117.6,508.1 L156.0,509.7 Z' },
-  { key: 'B_panturrilhaD', label: 'Panturrilha direita', d: 'M48.5,509.7 L87.0,508.1 L79.3,604.3 L56.3,606.0 Z' },
-  { key: 'B_panturrilhaE', label: 'Panturrilha esquerda', d: 'M156.0,509.7 L117.6,508.1 L125.3,604.3 L148.3,606.0 Z' },
-  { key: 'B_tornozeloD', label: 'Tornozelo direito', d: 'M56.3,606.0 L79.3,604.3 L76.7,622.3 L58.8,624.0 Z' },
-  { key: 'B_tornozeloE', label: 'Tornozelo esquerdo', d: 'M148.3,606.0 L125.3,604.3 L127.8,622.3 L145.7,624.0 Z' },
-  { key: 'B_peD', label: 'Pé direito', d: 'M58.8,624.0 L76.7,622.3 L87.0,643.5 L64.0,650.0 L40.8,645.2 Z' },
-  { key: 'B_peE', label: 'Pé esquerdo', d: 'M145.7,624.0 L127.8,622.3 L117.6,643.5 L140.6,650.0 L163.7,645.2 Z' },
+  { key: 'B_quadrilE', label: 'Quadril esquerdo', d: 'M81.8,366.0 L53.7,375.8 Q46.0,387.2 53.7,400.3 L94.6,397.1 L89.5,372.6 Z' },
+  { key: 'B_quadrilD', label: 'Quadril direito', d: 'M122.7,366.0 L150.8,375.8 Q158.5,387.2 150.8,400.3 L110.0,397.1 L115.0,372.6 Z' },
+  { key: 'B_gluteoE', label: 'Glúteo esquerdo', d: 'M53.7,375.9 L94.6,372.7 L90.7,403.6 L48.5,406.9 Z' },
+  { key: 'B_gluteoD', label: 'Glúteo direito', d: 'M150.8,375.9 L110.0,372.7 L113.8,403.6 L156.0,406.9 Z' },
+  { key: 'B_coxaPostE', label: 'Coxa posterior esquerda', d: 'M48.5,431.3 L90.7,428.0 L89.5,481.9 L46.0,483.6 Z' },
+  { key: 'B_coxaPostD', label: 'Coxa posterior direita', d: 'M156.0,431.3 L113.8,428.0 L115.0,481.9 L158.5,483.6 Z' },
+  { key: 'B_joelhoE', label: 'Joelho esquerdo', d: 'M46.0,483.6 L89.5,481.9 L87.0,508.1 L48.5,509.7 Z' },
+  { key: 'B_joelhoD', label: 'Joelho direito', d: 'M158.5,483.6 L115.0,481.9 L117.6,508.1 L156.0,509.7 Z' },
+  { key: 'B_panturrilhaE', label: 'Panturrilha esquerda', d: 'M48.5,509.7 L87.0,508.1 L79.3,604.3 L56.3,606.0 Z' },
+  { key: 'B_panturrilhaD', label: 'Panturrilha direita', d: 'M156.0,509.7 L117.6,508.1 L125.3,604.3 L148.3,606.0 Z' },
+  { key: 'B_tornozeloE', label: 'Tornozelo esquerdo', d: 'M56.3,606.0 L79.3,604.3 L76.7,622.3 L58.8,624.0 Z' },
+  { key: 'B_tornozeloD', label: 'Tornozelo direito', d: 'M148.3,606.0 L125.3,604.3 L127.8,622.3 L145.7,624.0 Z' },
+  { key: 'B_peE', label: 'Pé esquerdo', d: 'M58.8,624.0 L76.7,622.3 L87.0,643.5 L64.0,650.0 L40.8,645.2 Z' },
+  { key: 'B_peD', label: 'Pé direito', d: 'M145.7,624.0 L127.8,622.3 L117.6,643.5 L140.6,650.0 L163.7,645.2 Z' },
 ];
 
 const EDEMA_FRONT = [
   { key: 'EF_face', label: 'Face', d: 'M112.8,211.6 Q142.0,193.0 171.2,211.6 Q171.2,240.5 142.0,249.1 Q112.8,240.5 112.8,211.6 Z' },
   { key: 'EF_pescoco', label: 'Pescoço', d: 'M126.1,252.0 L157.9,252.0 L152.6,267.8 L131.4,267.8 Z' },
-  { key: 'EF_bracoD', label: 'Braço direito', d: 'M54.5,311.0 L91.7,308.2 L83.7,370.0 L46.6,372.9 Z' },
-  { key: 'EF_bracoE', label: 'Braço esquerdo', d: 'M229.5,311.0 L192.3,308.2 L200.3,370.0 L237.4,372.9 Z' },
-  { key: 'EF_antebracoD', label: 'Antebraço direito', d: 'M46.6,372.9 L83.7,370.0 L70.5,450.6 L36.0,453.5 Z' },
-  { key: 'EF_antebracoE', label: 'Antebraço esquerdo', d: 'M237.4,372.9 L200.3,370.0 L213.5,450.6 L248.0,453.5 Z' },
+  { key: 'EF_bracoE', label: 'Braço esquerdo', d: 'M54.5,311.0 L91.7,308.2 L83.7,370.0 L46.6,372.9 Z' },
+  { key: 'EF_bracoD', label: 'Braço direito', d: 'M229.5,311.0 L192.3,308.2 L200.3,370.0 L237.4,372.9 Z' },
+  { key: 'EF_antebracoE', label: 'Antebraço esquerdo', d: 'M46.6,372.9 L83.7,370.0 L70.5,450.6 L36.0,453.5 Z' },
+  { key: 'EF_antebracoD', label: 'Antebraço direito', d: 'M237.4,372.9 L200.3,370.0 L213.5,450.6 L248.0,453.5 Z' },
   { key: 'EF_abdSup', label: 'Abdômen superior', d: 'M94.3,283.7 L189.7,283.7 L181.7,345.5 L102.3,345.5 Z' },
   { key: 'EF_abdInf', label: 'Abdômen inferior', d: 'M102.3,345.5 L181.7,345.5 Q192.3,364.3 179.1,383.0 L104.9,383.0 Q91.7,364.3 102.3,345.5 Z' },
   { key: 'EF_quadris', label: 'Quadris / Flancos', d: 'M81.1,383.0 L202.9,383.0 Q210.9,400.3 197.7,413.2 L86.3,413.2 Q73.1,400.3 81.1,383.0 Z' },
-  { key: 'EF_coxaD', label: 'Coxa anterior direita', d: 'M91.7,413.2 L136.8,410.4 L128.8,506.7 L83.7,508.2 Z' },
-  { key: 'EF_coxaE', label: 'Coxa anterior esquerda', d: 'M192.3,413.2 L147.2,410.4 L155.2,506.7 L200.3,508.2 Z' },
-  { key: 'EF_joelhoD', label: 'Joelho direito', d: 'M83.7,508.2 L128.8,506.7 L126.1,529.8 L86.3,531.2 Z' },
-  { key: 'EF_joelhoE', label: 'Joelho esquerdo', d: 'M200.3,508.2 L155.2,506.7 L157.9,529.8 L197.7,531.2 Z' },
-  { key: 'EF_panturrilhaD', label: 'Panturrilha direita', d: 'M86.3,531.2 L126.1,529.8 L118.2,614.7 L94.3,616.1 Z' },
-  { key: 'EF_panturrilhaE', label: 'Panturrilha esquerda', d: 'M197.7,531.2 L157.9,529.8 L165.8,614.7 L189.7,616.1 Z' },
-  { key: 'EF_tornozeloD', label: 'Tornozelo direito', d: 'M94.3,616.1 L118.2,614.7 L115.5,630.6 L96.9,632.0 Z' },
-  { key: 'EF_tornozeloE', label: 'Tornozelo esquerdo', d: 'M189.7,616.1 L165.8,614.7 L168.5,630.6 L187.1,632.0 Z' },
-  { key: 'EF_peD', label: 'Pé direito', d: 'M96.9,632.0 L115.5,630.6 L126.1,649.2 L102.3,655.0 L78.3,650.7 Z' },
-  { key: 'EF_peE', label: 'Pé esquerdo', d: 'M187.1,632.0 L168.5,630.6 L157.9,649.2 L181.7,655.0 L205.7,650.7 Z' },
+  { key: 'EF_coxaE', label: 'Coxa anterior esquerda', d: 'M91.7,413.2 L136.8,410.4 L128.8,506.7 L83.7,508.2 Z' },
+  { key: 'EF_coxaD', label: 'Coxa anterior direita', d: 'M192.3,413.2 L147.2,410.4 L155.2,506.7 L200.3,508.2 Z' },
+  { key: 'EF_joelhoE', label: 'Joelho esquerdo', d: 'M83.7,508.2 L128.8,506.7 L126.1,529.8 L86.3,531.2 Z' },
+  { key: 'EF_joelhoD', label: 'Joelho direito', d: 'M200.3,508.2 L155.2,506.7 L157.9,529.8 L197.7,531.2 Z' },
+  { key: 'EF_panturrilhaE', label: 'Panturrilha esquerda', d: 'M86.3,531.2 L126.1,529.8 L118.2,614.7 L94.3,616.1 Z' },
+  { key: 'EF_panturrilhaD', label: 'Panturrilha direita', d: 'M197.7,531.2 L157.9,529.8 L165.8,614.7 L189.7,616.1 Z' },
+  { key: 'EF_tornozeloE', label: 'Tornozelo esquerdo', d: 'M94.3,616.1 L118.2,614.7 L115.5,630.6 L96.9,632.0 Z' },
+  { key: 'EF_tornozeloD', label: 'Tornozelo direito', d: 'M189.7,616.1 L165.8,614.7 L168.5,630.6 L187.1,632.0 Z' },
+  { key: 'EF_peE', label: 'Pé esquerdo', d: 'M96.9,632.0 L115.5,630.6 L126.1,649.2 L102.3,655.0 L78.3,650.7 Z' },
+  { key: 'EF_peD', label: 'Pé direito', d: 'M187.1,632.0 L168.5,630.6 L157.9,649.2 L181.7,655.0 L205.7,650.7 Z' },
 ];
 
 const EDEMA_BACK = [
   { key: 'EB_costasSup', label: 'Costas superiores', d: 'M30.7,28.0 L181.3,28.0 Q185.4,85.0 164.5,116.3 L47.5,116.3 Q26.6,85.0 30.7,28.0 Z' },
   { key: 'EB_costasInf', label: 'Costas inferiores', d: 'M47.5,116.3 L164.5,116.3 Q173.0,150.6 156.2,173.4 L55.8,173.4 Q39.0,150.6 47.5,116.3 Z' },
   { key: 'EB_lombar', label: 'Lombar', d: 'M55.8,173.4 L156.2,173.4 Q164.5,218.9 139.5,267.5 L72.5,267.5 Q47.5,218.9 55.8,173.4 Z' },
-  { key: 'EB_flancoD', label: 'Flanco direito', d: 'M30.7,173.4 L55.8,173.4 Q47.5,218.9 55.8,241.8 L26.6,241.8 Q18.1,204.8 30.7,173.4 Z' },
-  { key: 'EB_flancoE', label: 'Flanco esquerdo', d: 'M181.3,173.4 L156.2,173.4 Q164.5,218.9 156.2,241.8 L185.4,241.8 Q193.9,204.8 181.3,173.4 Z' },
-  { key: 'EB_gluteoD', label: 'Glúteo direito', d: 'M26.6,284.6 L93.4,278.9 L87.1,375.8 L18.1,381.5 Z' },
-  { key: 'EB_gluteoE', label: 'Glúteo esquerdo', d: 'M185.4,284.6 L118.6,278.9 L124.9,375.8 L193.9,381.5 Z' },
-  { key: 'EB_coxaPostD', label: 'Coxa posterior direita', d: 'M18.1,381.5 L87.1,375.8 L85.1,469.9 L14.0,472.7 Z' },
-  { key: 'EB_coxaPostE', label: 'Coxa posterior esquerda', d: 'M193.9,381.5 L124.9,375.8 L126.9,469.9 L198.0,472.7 Z' },
-  { key: 'EB_panturrilhaD', label: 'Panturrilha posterior direita', d: 'M18.1,518.4 L81.0,515.5 L68.4,683.8 L30.7,686.6 Z' },
-  { key: 'EB_panturrilhaE', label: 'Panturrilha posterior esquerda', d: 'M193.9,518.4 L131.0,515.5 L143.6,683.8 L181.3,686.6 Z' },
-  { key: 'EB_tornozeloD', label: 'Tornozelo posterior direito', d: 'M30.7,686.6 L68.4,683.8 L64.2,715.1 L34.9,718.0 Z' },
-  { key: 'EB_tornozeloE', label: 'Tornozelo posterior esquerdo', d: 'M181.3,686.6 L143.6,683.8 L147.8,715.1 L177.1,718.0 Z' },
+  { key: 'EB_flancoE', label: 'Flanco esquerdo', d: 'M30.7,173.4 L55.8,173.4 Q47.5,218.9 55.8,241.8 L26.6,241.8 Q18.1,204.8 30.7,173.4 Z' },
+  { key: 'EB_flancoD', label: 'Flanco direito', d: 'M181.3,173.4 L156.2,173.4 Q164.5,218.9 156.2,241.8 L185.4,241.8 Q193.9,204.8 181.3,173.4 Z' },
+  { key: 'EB_gluteoE', label: 'Glúteo esquerdo', d: 'M26.6,284.6 L93.4,278.9 L87.1,375.8 L18.1,381.5 Z' },
+  { key: 'EB_gluteoD', label: 'Glúteo direito', d: 'M185.4,284.6 L118.6,278.9 L124.9,375.8 L193.9,381.5 Z' },
+  { key: 'EB_coxaPostE', label: 'Coxa posterior esquerda', d: 'M18.1,381.5 L87.1,375.8 L85.1,469.9 L14.0,472.7 Z' },
+  { key: 'EB_coxaPostD', label: 'Coxa posterior direita', d: 'M193.9,381.5 L124.9,375.8 L126.9,469.9 L198.0,472.7 Z' },
+  { key: 'EB_panturrilhaE', label: 'Panturrilha posterior esquerda', d: 'M18.1,518.4 L81.0,515.5 L68.4,683.8 L30.7,686.6 Z' },
+  { key: 'EB_panturrilhaD', label: 'Panturrilha posterior direita', d: 'M193.9,518.4 L131.0,515.5 L143.6,683.8 L181.3,686.6 Z' },
+  { key: 'EB_tornozeloE', label: 'Tornozelo posterior esquerdo', d: 'M30.7,686.6 L68.4,683.8 L64.2,715.1 L34.9,718.0 Z' },
+  { key: 'EB_tornozeloD', label: 'Tornozelo posterior direito', d: 'M181.3,686.6 L143.6,683.8 L147.8,715.1 L177.1,718.0 Z' },
 ];
 
 
@@ -740,10 +779,19 @@ function renderClientRows(clientes){
 }
 
 // ---- Nova cliente ----
+let ncSexo = 'feminino';
 document.getElementById('btnNewClient').addEventListener('click', ()=>{
   document.getElementById('ncNome').value = '';
   document.getElementById('ncError').style.display = 'none';
+  ncSexo = 'feminino';
+  document.querySelectorAll('#ncSexoToggle button').forEach(b=> b.classList.toggle('active', b.dataset.sexo === ncSexo));
   go('newclient');
+});
+
+document.getElementById('ncSexoToggle').addEventListener('click', e=>{
+  if(e.target.tagName !== 'BUTTON') return;
+  ncSexo = e.target.dataset.sexo;
+  document.querySelectorAll('#ncSexoToggle button').forEach(b=> b.classList.toggle('active', b.dataset.sexo === ncSexo));
 });
 
 document.getElementById('btnCancelNewClient').addEventListener('click', ()=> go('list'));
@@ -764,7 +812,7 @@ document.getElementById('btnSaveNewClient').addEventListener('click', async ()=>
   try{
     const res = await fetch(API_URL, {
       method: 'POST',
-      body: JSON.stringify({ action: 'createClient', nome: nome })
+      body: JSON.stringify({ action: 'createClient', nome: nome, sexo: ncSexo })
     });
     const data = await res.json();
     if(data.error) throw new Error(data.error);
@@ -792,6 +840,7 @@ async function abrirNovoPlano(clientePreSelecionado){
   document.getElementById('npValorPago').value = '';
   document.getElementById('npDataPagamento').value = '';
   document.getElementById('npPagamento').value = 'integral';
+  document.getElementById('npFormaPagamento').value = '';
   document.getElementById('npValorPagoWrap').style.display = 'none';
   document.getElementById('npError').style.display = 'none';
   npTipo = 'terapeutico';
@@ -861,7 +910,8 @@ document.getElementById('btnSaveNewPlano').addEventListener('click', async ()=>{
         valor_total_plano: valorTotal,
         status_pagamento: pagamento,
         valor_pago: valorPago,
-        data_pagamento: dataPagamento
+        data_pagamento: dataPagamento,
+        forma_pagamento: document.getElementById('npFormaPagamento').value
       })
     });
     const data = await res.json();
@@ -929,7 +979,7 @@ function renderPreparacao(c, prep){
   document.getElementById('prepFinanceiro').textContent = financeiroTextos[c.status_pagamento] || '—';
 
   const u = prep.ultimaSessao || {};
-  const chegadaLabel = (CHEGADA_OPCOES.find(o=>o.v===u.chegada)||{}).label || u.chegada || '—';
+  const chegadaLabel = (getChegadaOpcoes(c.sexo).find(o=>o.v===u.chegada)||{}).label || u.chegada || '—';
   const saidaLabel = (SAIDA_OPCOES.find(o=>o.v===u.saida)||{}).label || u.saida || '—';
   document.getElementById('prepUltimaSessao').textContent =
     (u.data ? formatDatePt(u.data) : '—') + ' · Chegou: ' + chegadaLabel + ' · Saiu: ' + saidaLabel;
@@ -971,15 +1021,17 @@ document.getElementById('btnIniciarCheckin').addEventListener('click', ()=>{
 // ---- Boas-vindas ----
 function abrirCliente(c){
   currentPlan = c;
+  document.getElementById('welcomeEyebrow').textContent = c.sexo === 'masculino' ? 'Bem-vindo' : 'Bem-vinda';
   document.getElementById('greetName').textContent = c.nome;
-  document.getElementById('planSub').textContent = planLabel(c.tipo) + ' · sessão ' + c.sessoes_realizadas + ' de ' + c.total_sessoes;
 
-  const remaining = c.total_sessoes - c.sessoes_realizadas;
   const note = document.getElementById('gentleNote');
-  if(remaining === 2){
-    note.textContent = 'Faltam apenas ' + remaining + ' sessões para concluir seu plano.';
-  } else {
+  if(c.isAvulso){
+    document.getElementById('planSub').textContent = planLabel(c.tipo) + ' · atendimento avulso';
     note.textContent = '';
+  } else {
+    document.getElementById('planSub').textContent = planLabel(c.tipo) + ' · sessão ' + c.sessoes_realizadas + ' de ' + c.total_sessoes;
+    const remaining = c.total_sessoes - c.sessoes_realizadas;
+    note.textContent = (remaining === 2) ? ('Faltam apenas ' + remaining + ' sessões para concluir seu plano.') : '';
   }
   go('welcome');
 }
@@ -1054,7 +1106,7 @@ function formatDatePt(iso){
 
 document.getElementById('btnStartCheckin').addEventListener('click', ()=>{
   const remaining = currentPlan.total_sessoes - currentPlan.sessoes_realizadas;
-  if(remaining <= 1){
+  if(!currentPlan.isAvulso && remaining <= 1){
     abrirUltimaSessao();
   } else {
     iniciarFluxoCheckin();
@@ -1263,6 +1315,7 @@ document.getElementById('btnConfirmSig').addEventListener('click', async ()=>{
         action: 'checkin',
         id_plano: currentPlan.id_plano,
         id_cliente: currentPlan.id_cliente,
+        tipo: currentPlan.tipo,
         intensidade: intensity,
         regioes: regioesLabels
       })
@@ -1274,7 +1327,9 @@ document.getElementById('btnConfirmSig').addEventListener('click', async ()=>{
       intensidade: intensity,
       regioes: regioesLabels
     };
-    document.getElementById('confirmSub').textContent = currentPlan.nome + ' · sessão ' + data.sessoes_realizadas + ' de ' + data.total_sessoes;
+    document.getElementById('confirmSub').textContent = currentPlan.isAvulso
+      ? (currentPlan.nome + ' · atendimento avulso')
+      : (currentPlan.nome + ' · sessão ' + data.sessoes_realizadas + ' de ' + data.total_sessoes);
     document.getElementById('noteBox').style.display = 'none';
     document.getElementById('noteBox').value = '';
     document.getElementById('btnOpenNote').style.display = 'inline-block';
@@ -1363,23 +1418,34 @@ document.getElementById('btnResumoAction').addEventListener('click', ()=>{
 });
 
 // ---- Registro rápido pós-atendimento (tela interna) ----
-const CHEGADA_OPCOES = [
-  {v:'muito_bem', emoji:'😊', label:'Muito bem'},
-  {v:'bem', emoji:'🙂', label:'Bem'},
-  {v:'normal', emoji:'😐', label:'Normal'},
-  {v:'cansada', emoji:'😣', label:'Cansada'},
-  {v:'muito_mal', emoji:'😖', label:'Muito mal'}
-];
+function getChegadaOpcoes(sexo){
+  var cansado = sexo === 'masculino' ? 'Cansado' : 'Cansada';
+  return [
+    {v:'muito_bem', emoji:'😊', label:'Muito bem'},
+    {v:'bem', emoji:'🙂', label:'Bem'},
+    {v:'normal', emoji:'😐', label:'Normal'},
+    {v:'cansada', emoji:'😣', label:cansado},
+    {v:'muito_mal', emoji:'😖', label:'Muito mal'}
+  ];
+}
 const SAIDA_OPCOES = [
   {v:'muito_melhor', emoji:'😀', label:'Muito melhor'},
   {v:'melhor', emoji:'🙂', label:'Melhor'},
   {v:'igual', emoji:'😐', label:'Igual'},
   {v:'pior', emoji:'🙁', label:'Pior'}
 ];
-const CONTEXTO_DIA_OPCOES = ['Estressada','Ansiosa','Cansada','Dormiu mal','Trabalho intenso','Exercício intenso','TPM','Menstruada','Ovulação','Dor de cabeça','Bruxismo'];
+function getContextoDiaOpcoes(sexo){
+  if(sexo === 'masculino'){
+    return ['Estressado','Ansioso','Cansado','Dormiu mal','Trabalho intenso','Exercício intenso','Dor de cabeça','Bruxismo'];
+  }
+  return ['Estressada','Ansiosa','Cansada','Dormiu mal','Trabalho intenso','Exercício intenso','TPM','Menstruada','Ovulação','Dor de cabeça','Bruxismo'];
+}
 const REALIZADO_OPCOES = ['Relaxante','Terapêutica','Thai','Drenagem','Alongamentos','Liberação miofascial','Ventosa','Facial'];
 const PRESSAO_OPCOES = ['Leve','Média','Forte','Personalizada'];
-const ATENCAO_OPCOES = ['Relaxou rapidamente','Demorou para relaxar','Dormiu durante a sessão','Muito sensível ao toque','Precisou diminuir pressão','Precisou aumentar pressão','Respiração curta','Muito tensa','Conversou bastante','Ficou em silêncio','Chorou','Riu','Dor mudou durante a sessão','Voltou melhor que na última sessão'];
+function getAtencaoOpcoes(sexo){
+  var tenso = sexo === 'masculino' ? 'Muito tenso' : 'Muito tensa';
+  return ['Relaxou rapidamente','Demorou para relaxar','Dormiu durante a sessão','Muito sensível ao toque','Precisou diminuir pressão','Precisou aumentar pressão','Respiração curta',tenso,'Conversou bastante','Ficou em silêncio','Chorou','Riu','Dor mudou durante a sessão','Voltou melhor que na última sessão'];
+}
 
 let regChegadaValor = '';
 let regSaidaValor = '';
@@ -1397,8 +1463,8 @@ function salvarRascunhoRegistro(){
   const rascunho = {
     id_sessao: currentIdSessao,
     cliente: {
-      id_cliente: currentPlan.id_cliente, nome: currentPlan.nome, tipo: currentPlan.tipo,
-      id_plano: currentPlan.id_plano, total_sessoes: currentPlan.total_sessoes, sessoes_realizadas: currentPlan.sessoes_realizadas
+      id_cliente: currentPlan.id_cliente, nome: currentPlan.nome, tipo: currentPlan.tipo, sexo: currentPlan.sexo,
+      id_plano: currentPlan.id_plano, isAvulso: currentPlan.isAvulso, total_sessoes: currentPlan.total_sessoes, sessoes_realizadas: currentPlan.sessoes_realizadas
     },
     chegada: regChegadaValor, saida: regSaidaValor, pressao: regPressaoValor,
     pressaoCustom: document.getElementById('regPressaoCustom').value,
@@ -1406,6 +1472,8 @@ function salvarRascunhoRegistro(){
     observarTexto: document.getElementById('regObservarTexto').value,
     observarAtivo: regAcompanharAtivo,
     insightCliente: document.getElementById('regInsightCliente').value,
+    valorCobrado: currentPlan.isAvulso ? document.getElementById('regValorCobrado').value : '',
+    formaPagamento: currentPlan.isAvulso ? document.getElementById('regFormaPagamentoAvulso').value : '',
     savedAt: Date.now()
   };
   try{ localStorage.setItem(RASCUNHO_KEY, JSON.stringify(rascunho)); }catch(err){ /* localStorage indisponível — segue sem rascunho */ }
@@ -1519,17 +1587,26 @@ function abrirRegistroTerapeuta(rascunho){
     regAcompanharAtivo = false;
   }
 
-  renderEmojiRow('regChegada', CHEGADA_OPCOES, ()=>regChegadaValor, v=>regChegadaValor=v);
+  renderEmojiRow('regChegada', getChegadaOpcoes(currentPlan.sexo), ()=>regChegadaValor, v=>regChegadaValor=v);
   renderEmojiRow('regSaida', SAIDA_OPCOES, ()=>regSaidaValor, v=>regSaidaValor=v);
-  renderChipMulti('regContexto', CONTEXTO_DIA_OPCOES, regContextoSet);
+  renderChipMulti('regContexto', getContextoDiaOpcoes(currentPlan.sexo), regContextoSet);
   renderChipMulti('regRealizado', REALIZADO_OPCOES, regRealizadoSet);
-  renderChipMulti('regAtencao', ATENCAO_OPCOES, regAtencaoSet);
+  renderChipMulti('regAtencao', getAtencaoOpcoes(currentPlan.sexo), regAtencaoSet);
   renderPressao(rascunho ? rascunho.pressao : null);
 
   document.getElementById('regPressaoCustom').value = rascunho ? (rascunho.pressaoCustom || '') : '';
   document.getElementById('regObservarTexto').value = rascunho ? (rascunho.observarTexto || '') : '';
   document.getElementById('regInsightCliente').value = rascunho ? (rascunho.insightCliente || '') : '';
   document.getElementById('btnAcompanhar').classList.toggle('active', regAcompanharAtivo);
+
+  const avulsoBlock = document.getElementById('regAvulsoPagamentoBlock');
+  if(currentPlan.isAvulso){
+    avulsoBlock.style.display = 'block';
+    document.getElementById('regValorCobrado').value = rascunho ? (rascunho.valorCobrado || '') : '';
+    document.getElementById('regFormaPagamentoAvulso').value = rascunho ? (rascunho.formaPagamento || '') : '';
+  } else {
+    avulsoBlock.style.display = 'none';
+  }
 
   document.getElementById('rascunhoBanner').style.display = 'none';
   go('registro');
@@ -1541,7 +1618,7 @@ document.getElementById('btnAcompanhar').addEventListener('click', ()=>{
   salvarRascunhoRegistro();
 });
 
-['regPressaoCustom','regObservarTexto','regInsightCliente'].forEach(id=>{
+['regPressaoCustom','regObservarTexto','regInsightCliente','regValorCobrado','regFormaPagamentoAvulso'].forEach(id=>{
   document.getElementById(id).addEventListener('input', salvarRascunhoRegistro);
 });
 
@@ -1556,23 +1633,25 @@ document.getElementById('btnSaveRegistro').addEventListener('click', async ()=>{
   }
 
   try{
-    await fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({
-        action: 'saveRegistroTerapeuta',
-        id_sessao: currentIdSessao,
-        id_cliente: currentPlan.id_cliente,
-        chegada: regChegadaValor,
-        contexto_dia: Array.from(regContextoSet),
-        realizado: Array.from(regRealizadoSet),
-        pressao: pressaoFinal,
-        saida: regSaidaValor,
-        atencao: Array.from(regAtencaoSet),
-        observar_texto: document.getElementById('regObservarTexto').value.trim(),
-        observar_ativo: regAcompanharAtivo,
-        insight_cliente: document.getElementById('regInsightCliente').value.trim()
-      })
-    });
+    const payload = {
+      action: 'saveRegistroTerapeuta',
+      id_sessao: currentIdSessao,
+      id_cliente: currentPlan.id_cliente,
+      chegada: regChegadaValor,
+      contexto_dia: Array.from(regContextoSet),
+      realizado: Array.from(regRealizadoSet),
+      pressao: pressaoFinal,
+      saida: regSaidaValor,
+      atencao: Array.from(regAtencaoSet),
+      observar_texto: document.getElementById('regObservarTexto').value.trim(),
+      observar_ativo: regAcompanharAtivo,
+      insight_cliente: document.getElementById('regInsightCliente').value.trim()
+    };
+    if(currentPlan.isAvulso){
+      payload.valor_cobrado = document.getElementById('regValorCobrado').value;
+      payload.forma_pagamento = document.getElementById('regFormaPagamentoAvulso').value;
+    }
+    await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
     limparRascunhoRegistro();
   }catch(err){ /* segue o fluxo mesmo se falhar — não trava o dia da terapeuta; o rascunho continua salvo */ }
   currentPlan = null; currentIdSessao = null;
@@ -1614,7 +1693,7 @@ async function abrirFicha(c){
     const f = dados.ficha || {};
     document.getElementById('fcProfissao').value = f.profissao || '';
     document.getElementById('fcIdade').value = f.idade || '';
-    document.getElementById('fcTelefone').value = f.telefone || '';
+    document.getElementById('fcTelefone').value = dados.telefone || '';
     document.getElementById('fcObjetivo').value = f.objetivo_principal || '';
     document.getElementById('fcQueixa').value = f.queixa_principal || '';
     document.getElementById('fcLesoes').value = f.historico_lesoes || '';
@@ -1662,6 +1741,13 @@ function renderFichaPlanos(planos){
         '</div>' +
         '<input type="number" class="nc-input" data-valorpago style="margin-top:8px; display:none;" placeholder="Valor pago (R$)">' +
         '<input type="date" class="nc-input" data-datapag style="margin-top:8px;">' +
+        '<select class="nc-input" data-formapag style="margin-top:8px;">' +
+          '<option value="">Forma de pagamento (opcional)</option>' +
+          '<option value="PIX">PIX</option>' +
+          '<option value="Dinheiro">Dinheiro</option>' +
+          '<option value="Cartão">Cartão</option>' +
+          '<option value="Outros">Outros</option>' +
+        '</select>' +
         '<button class="btn-primary" data-salvarpag style="margin-top:8px; width:100%;">Salvar pagamento</button>' +
       '</div>';
 
@@ -1694,7 +1780,8 @@ function renderFichaPlanos(planos){
             id_plano: p.id_plano,
             status_pagamento: statusEscolhido,
             valor_pago: card.querySelector('[data-valorpago]').value,
-            data_pagamento: card.querySelector('[data-datapag]').value
+            data_pagamento: card.querySelector('[data-datapag]').value,
+            forma_pagamento: card.querySelector('[data-formapag]').value
           })
         });
         const res = await fetch(API_URL + '?action=planosCliente&id_cliente=' + encodeURIComponent(fichaClienteAtual.id_cliente));
@@ -1740,6 +1827,31 @@ document.getElementById('btnCriarNovoPlanoFicha').addEventListener('click', ()=>
   abrirNovoPlanoParaCliente(fichaClienteAtual);
 });
 
+document.getElementById('btnAtendimentoAvulso').addEventListener('click', ()=>{
+  if(!fichaClienteAtual) return;
+  document.getElementById('avulsoTipoTitulo').textContent = 'Qual o tipo de atendimento para ' + fichaClienteAtual.nome + '?';
+  go('avulso-tipo');
+});
+
+document.getElementById('btnCancelarAvulso').addEventListener('click', ()=> go('ficha'));
+
+document.querySelectorAll('[data-avulsotipo]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    abrirCliente({
+      id_cliente: fichaClienteAtual.id_cliente,
+      nome: fichaClienteAtual.nome,
+      sexo: fichaClienteAtual.sexo,
+      tipo: btn.dataset.avulsotipo,
+      id_plano: '',
+      isAvulso: true,
+      total_sessoes: 0,
+      sessoes_realizadas: 0
+    });
+  });
+});
+
+function formatBRL(v){ return 'R$ ' + Number(v||0).toFixed(2).replace('.', ','); }
+
 function renderFichaHistorico(sessoes){
   const box = document.getElementById('fichaHistorico');
   if(!sessoes || sessoes.length === 0){
@@ -1755,9 +1867,13 @@ function renderFichaHistorico(sessoes){
     card.style.padding = '14px 16px';
     card.style.fontSize = '13px';
     const r = s.registro || {};
+    const tituloSessao = s.isAvulso
+      ? ('Atendimento avulso — ' + formatDatePt(s.data))
+      : ('Sessão ' + s.numero_sessao + ' — ' + formatDatePt(s.data));
     card.innerHTML =
-      '<div style="font-family:var(--serif); font-size:16px; margin-bottom:6px;">Sessão ' + s.numero_sessao + ' — ' + formatDatePt(s.data) + '</div>' +
+      '<div style="font-family:var(--serif); font-size:16px; margin-bottom:6px;">' + tituloSessao + (s.isAvulso ? ' <span style="font-size:11px; color:var(--gold); font-family:var(--sans); font-weight:600;">AVULSO</span>' : '') + '</div>' +
       '<div style="color:var(--staff-text-soft); margin-bottom:6px;">Intensidade: ' + s.intensidade + ' / 10 &middot; Regiões: ' + (s.regioes || '—') + '</div>' +
+      (s.isAvulso ? '<div style="margin-bottom:4px;">Valor cobrado: ' + formatBRL(s.valorCobrado) + (s.formaPagamento ? ' (' + s.formaPagamento + ')' : '') + '</div>' : '') +
       (r.chegada || r.saida ? '<div style="margin-bottom:4px;">Chegou: ' + (r.chegada||'—') + ' &middot; Saiu: ' + (r.saida||'—') + '</div>' : '') +
       (r.contexto_dia ? '<div style="margin-bottom:4px;">Contexto do dia: ' + r.contexto_dia + '</div>' : '') +
       (r.realizado ? '<div style="margin-bottom:4px;">Realizado: ' + r.realizado + '</div>' : '') +
@@ -1779,11 +1895,18 @@ document.getElementById('btnSaveFicha').addEventListener('click', async ()=>{
     await fetch(API_URL, {
       method: 'POST',
       body: JSON.stringify({
+        action: 'saveDadosCadastrais',
+        id_cliente: fichaClienteAtual.id_cliente,
+        telefone: document.getElementById('fcTelefone').value.trim()
+      })
+    });
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({
         action: 'saveFichaClinica',
         id_cliente: fichaClienteAtual.id_cliente,
         profissao: document.getElementById('fcProfissao').value.trim(),
         idade: document.getElementById('fcIdade').value.trim(),
-        telefone: document.getElementById('fcTelefone').value.trim(),
         objetivo_principal: document.getElementById('fcObjetivo').value.trim(),
         queixa_principal: document.getElementById('fcQueixa').value.trim(),
         historico_lesoes: document.getElementById('fcLesoes').value.trim(),
