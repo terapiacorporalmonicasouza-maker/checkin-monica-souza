@@ -1335,7 +1335,8 @@ document.getElementById('btnConfirmSig').addEventListener('click', async ()=>{
     document.getElementById('btnOpenNote').style.display = 'inline-block';
     go('confirm');
   }catch(err){
-    document.getElementById('submitError').textContent = 'Não foi possível salvar. Tente novamente.';
+    console.error('Erro no checkin:', err);
+    document.getElementById('submitError').textContent = 'Não foi possível salvar: ' + err.message;
     document.getElementById('submitError').style.display = 'block';
   }
   btn.textContent = 'Confirmar';
