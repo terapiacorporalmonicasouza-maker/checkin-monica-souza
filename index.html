@@ -553,7 +553,24 @@
 <!-- Tela: ficha clínica + histórico completo (uso interno) -->
 <div class="screen" id="screen-ficha" style="background:var(--staff-bg); color:var(--staff-text); padding:36px 40px; align-items:stretch;">
   <div class="list-eyebrow">Painel interno &middot; não mostrar à cliente</div>
-  <div class="list-title" id="fichaTitulo" style="font-size:22px;">Ficha clínica</div>
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+    <div class="list-title" id="fichaTitulo" style="font-size:22px;">Ficha clínica</div>
+    <button class="note-toggle" id="btnEditarDadosBasicos" style="padding:0; flex-shrink:0;">Editar nome/gênero</button>
+  </div>
+
+  <div id="editarDadosBasicosForm" style="display:none; background:var(--staff-card); border:1px solid var(--staff-border); border-radius:14px; padding:16px; margin-top:10px;">
+    <label class="nc-label">Nome completo</label>
+    <input type="text" id="editNome" class="nc-input">
+    <label class="nc-label" style="margin-top:12px;">Gênero</label>
+    <div class="view-toggle" id="editSexoToggle">
+      <button data-sexo="feminino" class="active">Feminino</button>
+      <button data-sexo="masculino">Masculino</button>
+    </div>
+    <div style="display:flex; gap:10px; margin-top:12px;">
+      <button class="btn-ghost" id="btnCancelarEdicaoDados" style="flex:1; border-color:var(--staff-border); color:var(--staff-text); margin:0;">Cancelar</button>
+      <button class="btn-primary" id="btnSalvarEdicaoDados" style="flex:1; margin:0;">Salvar</button>
+    </div>
+  </div>
 
   <div style="margin:14px 0;">
     <button class="btn-primary" id="btnIniciarAtendimentoFicha" style="display:none; width:100%; margin-top:0;">Iniciar atendimento</button>
@@ -1667,6 +1684,7 @@ let fichaClienteAtual = null;
 async function abrirFicha(c){
   fichaClienteAtual = c;
   document.getElementById('fichaTitulo').textContent = 'Ficha clínica — ' + c.nome;
+  document.getElementById('editarDadosBasicosForm').style.display = 'none';
   ['fcProfissao','fcIdade','fcTelefone','fcObjetivo','fcQueixa','fcLesoes','fcCirurgias','fcDoencas','fcMedicamentos','fcAlergias','fcAtividades','fcRestricoes','fcObservacoes'].forEach(id=> document.getElementById(id).value = '');
   document.getElementById('fichaHistorico').innerHTML = 'Carregando...';
   document.getElementById('fichaPlanos').innerHTML = 'Carregando...';
@@ -1687,6 +1705,10 @@ async function abrirFicha(c){
     const res = await fetch(API_URL + '?action=fichaCompleta&id_cliente=' + encodeURIComponent(c.id_cliente));
     const dados = await res.json();
     if(dados.error) throw new Error(dados.error);
+
+    fichaClienteAtual.nome = dados.nome || fichaClienteAtual.nome;
+    fichaClienteAtual.sexo = dados.sexo || fichaClienteAtual.sexo;
+    document.getElementById('fichaTitulo').textContent = 'Ficha clínica — ' + fichaClienteAtual.nome;
 
     if(dados.planos && dados.planos.error) throw new Error(dados.planos.error);
     renderFichaPlanos(Array.isArray(dados.planos) ? dados.planos : []);
@@ -1826,6 +1848,54 @@ document.getElementById('btnIniciarAtendimentoFicha').addEventListener('click', 
 document.getElementById('btnCriarNovoPlanoFicha').addEventListener('click', ()=>{
   if(!fichaClienteAtual) return;
   abrirNovoPlanoParaCliente(fichaClienteAtual);
+});
+
+document.getElementById('btnEditarDadosBasicos').addEventListener('click', ()=>{
+  if(!fichaClienteAtual) return;
+  document.getElementById('editNome').value = fichaClienteAtual.nome || '';
+  const sexoAtual = fichaClienteAtual.sexo === 'masculino' ? 'masculino' : 'feminino';
+  document.querySelectorAll('#editSexoToggle button').forEach(b=> b.classList.toggle('active', b.dataset.sexo === sexoAtual));
+  document.getElementById('editarDadosBasicosForm').style.display = 'block';
+});
+
+document.getElementById('btnCancelarEdicaoDados').addEventListener('click', ()=>{
+  document.getElementById('editarDadosBasicosForm').style.display = 'none';
+});
+
+document.getElementById('editSexoToggle').addEventListener('click', e=>{
+  if(e.target.tagName !== 'BUTTON') return;
+  document.querySelectorAll('#editSexoToggle button').forEach(b=> b.classList.toggle('active', b === e.target));
+});
+
+document.getElementById('btnSalvarEdicaoDados').addEventListener('click', async ()=>{
+  if(!fichaClienteAtual) return;
+  const novoNome = document.getElementById('editNome').value.trim();
+  if(!novoNome){
+    alert('O nome não pode ficar em branco.');
+    return;
+  }
+  const sexoEscolhido = document.querySelector('#editSexoToggle button.active').dataset.sexo;
+
+  const btn = document.getElementById('btnSalvarEdicaoDados');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+  try{
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'saveDadosCadastrais',
+        id_cliente: fichaClienteAtual.id_cliente,
+        nome: novoNome,
+        sexo: sexoEscolhido
+      })
+    });
+    fichaClienteAtual.nome = novoNome;
+    fichaClienteAtual.sexo = sexoEscolhido;
+    document.getElementById('fichaTitulo').textContent = 'Ficha clínica — ' + novoNome;
+    document.getElementById('editarDadosBasicosForm').style.display = 'none';
+  }catch(err){
+    alert('Não foi possível salvar: ' + err.message);
+  }
+  btn.disabled = false; btn.textContent = 'Salvar';
 });
 
 document.getElementById('btnAtendimentoAvulso').addEventListener('click', ()=>{
