@@ -107,19 +107,18 @@
 
   /* ---- Check-in ---- */
   #screen-checkin{padding:0; flex-direction:column;}
-  .map-title{font-family:var(--serif); font-size:20px; font-weight:500; text-align:center;}
+  .map-title{font-family:var(--serif); font-size:19px; font-weight:500; text-align:center;}
   .checkin-map-layout{flex:1; min-height:0; display:flex; flex-direction:row;}
-  .checkin-tabs{width:56px; flex-shrink:0; display:flex; flex-direction:column; gap:10px; padding:16px 8px;}
-  .checkin-tabs button{flex:1; border-radius:14px; border:1.5px solid var(--line); background:var(--surface); font-size:15px; font-weight:600; color:var(--ink-soft); writing-mode:vertical-rl; text-orientation:mixed; letter-spacing:.03em; cursor:pointer; font-family:inherit; padding:14px 0;}
+  .checkin-tabs{width:104px; flex-shrink:0; display:flex; flex-direction:column; gap:10px; padding:16px 10px;}
+  .checkin-tabs button{flex:1; border-radius:14px; border:1.5px solid var(--line); background:var(--surface); font-size:16px; font-weight:600; color:var(--ink-soft); text-align:center; cursor:pointer; font-family:inherit; padding:14px 8px;}
   .checkin-tabs button.active{background:var(--accent); border-color:var(--accent); color:#fff;}
   .checkin-content{flex:1; min-width:0; display:flex; flex-direction:column;}
   .checkin-map-main{flex:1 1 auto; min-height:0; display:flex; flex-direction:column;}
-  .checkin-header-compact{flex-shrink:0; padding:14px 16px 4px; display:flex; flex-direction:column; align-items:center;}
-  .body-map-container{flex:1; min-height:0; width:100%; position:relative; display:flex; justify-content:center; align-items:center; overflow:hidden; padding:0 16px 12px;}
+  .checkin-header-compact{flex-shrink:0; padding:10px 12px 2px; display:flex; flex-direction:column; align-items:center;}
+  .body-map-container{flex:1; min-height:0; width:100%; position:relative; display:flex; justify-content:center; align-items:center; overflow:hidden; padding:0 6px 6px;}
   .body-map-container svg{height:100%; max-width:100%;}
-  .region-shape{cursor:pointer; transition:fill .12s, stroke .12s;}
-  .region-shape:not(.region-decorative):hover{fill:#E3B074;}
-  .region-decorative{cursor:default;}
+  .region-path{cursor:pointer; transition:fill-opacity .15s;}
+  .region-path:hover{fill:#C98A2A; fill-opacity:.35;}
   .checkin-map-side{flex-shrink:0; padding:14px 24px calc(16px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:10px; background:var(--bg); box-shadow:0 -2px 8px rgba(94,68,59,0.06);}
   .checkin-side-hint{font-size:15px; color:var(--ink-soft);}
   .field-label{font-size:18px; font-weight:600; color:var(--ink-soft);}
@@ -129,11 +128,12 @@
   @media (orientation:landscape) and (min-width:680px){
     .checkin-content{flex-direction:row;}
     .checkin-map-main{flex:1 1 68%;}
-    .checkin-header-compact{padding:14px 16px 4px;}
-    .map-title{font-size:19px;}
+    .checkin-header-compact{padding:8px 12px 2px;}
+    .map-title{font-size:17px;}
     .checkin-map-side{flex:0 0 32%; max-width:320px; box-shadow:none; border-left:1px solid var(--line); justify-content:flex-start; padding:22px 20px;}
     .checkin-map-side .region-chips{flex:1; min-height:0; overflow:auto; align-content:flex-start;}
     .checkin-map-side .btn-primary{margin-top:auto;}
+
   }
 
   .resumo-card{background:var(--staff-card); border:1px solid var(--staff-border); border-radius:16px; padding:20px 22px;}
@@ -660,48 +660,65 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbxFxmKJShVEPewVXUovkKJWJ5DkeB7e3v2YiHplW3bRK3feDk18ZFyfulh_DUvmOQPakQ/exec';
 
 const REGION_DEFS_FRONT = [
-  { key:'F_rosto', label:'Rosto', decorative:false, shape:'circle', cx:150, cy:55, r:40 },
-  { key:'F_pescoco', label:'Pescoço', decorative:false, shape:'rect', x:126, y:98, w:48, h:34, rx:14 },
-  { key:'F_ombroE', label:'Ombro esquerdo', decorative:false, shape:'rect', x:28, y:133, w:62, h:40, rx:18 },
-  { key:'F_ombroD', label:'Ombro direito', decorative:false, shape:'rect', x:210, y:133, w:62, h:40, rx:18 },
-  { key:'F_bracoE', label:'Braço esquerdo', decorative:false, shape:'rect', x:28, y:176, w:62, h:156, rx:20 },
-  { key:'F_bracoD', label:'Braço direito', decorative:false, shape:'rect', x:210, y:176, w:62, h:156, rx:20 },
-  { key:'F_maoE', label:'Mão esquerda', decorative:false, shape:'rect', x:30, y:335, w:58, h:58, rx:20 },
-  { key:'F_maoD', label:'Mão direita', decorative:false, shape:'rect', x:212, y:335, w:58, h:58, rx:20 },
-  { key:'F_peito', label:'Peito', decorative:false, shape:'rect', x:93, y:133, w:114, h:66, rx:20 },
-  { key:'F_abdomen', label:'Abdômen', decorative:false, shape:'rect', x:101, y:202, w:98, h:97, rx:20 },
-  { key:'F_quadrilE', label:'Quadril esquerdo', decorative:false, shape:'rect', x:90, y:302, w:58, h:44, rx:16 },
-  { key:'F_quadrilD', label:'Quadril direito', decorative:false, shape:'rect', x:152, y:302, w:58, h:44, rx:16 },
-  { key:'F_coxaE', label:'Coxa esquerda', decorative:false, shape:'rect', x:90, y:349, w:58, h:162, rx:20 },
-  { key:'F_coxaD', label:'Coxa direita', decorative:false, shape:'rect', x:152, y:349, w:58, h:162, rx:20 },
-  { key:'F_pernaE', label:'Perna esquerda', decorative:false, shape:'rect', x:93, y:514, w:52, h:148, rx:18 },
-  { key:'F_pernaD', label:'Perna direita', decorative:false, shape:'rect', x:155, y:514, w:52, h:148, rx:18 },
-  { key:'F_peE', label:'Pé esquerdo', decorative:false, shape:'rect', x:85, y:665, w:60, h:52, rx:18 },
-  { key:'F_peD', label:'Pé direito', decorative:false, shape:'rect', x:155, y:665, w:60, h:52, rx:18 },
+  { key: 'F_cervical', label: 'Cervical', d: 'M107.3,193.0 L141.5,193.0 L135.9,211.1 L113.0,211.1 Z' },
+  { key: 'F_trapE', label: 'Trapézio esquerdo', d: 'M107.3,193.0 L75.8,196.2 Q44.4,204.5 32.9,222.6 L72.9,229.1 Q90.0,212.7 113.0,211.1 Z' },
+  { key: 'F_trapD', label: 'Trapézio direito', d: 'M141.5,193.0 L173.1,196.2 Q204.5,204.5 215.9,222.6 L175.9,229.1 Q158.8,212.7 135.9,211.1 Z' },
+  { key: 'F_ombroE', label: 'Ombro esquerdo', d: 'M32.9,222.6 Q21.5,242.3 29.9,260.3 L70.1,257.1 Q64.3,239.0 72.9,229.1 Z' },
+  { key: 'F_ombroD', label: 'Ombro direito', d: 'M215.9,222.6 Q227.4,242.3 218.9,260.3 L178.7,257.1 Q184.5,239.0 175.9,229.1 Z' },
+  { key: 'F_peitoralE', label: 'Peitoral esquerdo', d: 'M72.9,229.1 L64.3,257.1 Q58.7,286.7 81.6,299.8 L121.6,296.5 L121.6,219.2 Q92.9,221.0 72.9,229.1 Z' },
+  { key: 'F_peitoralD', label: 'Peitoral direito', d: 'M175.9,229.1 L184.5,257.1 Q190.2,286.7 167.3,299.8 L127.2,296.5 L127.2,219.2 Q156.0,221.0 175.9,229.1 Z' },
+  { key: 'F_bracoE', label: 'Braço esquerdo', d: 'M29.9,260.3 L70.1,257.1 L61.5,327.8 L21.5,331.1 Z' },
+  { key: 'F_bracoD', label: 'Braço direito', d: 'M218.9,260.3 L178.7,257.1 L187.3,327.8 L227.4,331.1 Z' },
+  { key: 'F_antebracoE', label: 'Antebraço esquerdo', d: 'M21.5,331.1 L61.5,327.8 L52.8,392.0 L15.7,395.2 Z' },
+  { key: 'F_antebracoD', label: 'Antebraço direito', d: 'M227.4,331.1 L187.3,327.8 L196.0,392.0 L233.2,395.2 Z' },
+  { key: 'F_punhoE', label: 'Punho esquerdo', d: 'M15.7,395.2 L52.8,392.0 L47.2,419.9 L10.0,423.2 Z' },
+  { key: 'F_punhoD', label: 'Punho direito', d: 'M233.2,395.2 L196.0,392.0 L198.8,419.9 L236.0,423.2 Z' },
+  { key: 'F_abdomen', label: 'Abdômen', d: 'M81.6,299.8 L121.6,296.5 L127.2,296.5 L167.3,299.8 Q178.7,321.2 164.4,342.7 L121.6,349.2 L84.4,342.7 Q70.1,321.2 81.6,299.8 Z' },
+  { key: 'F_quadrilE', label: 'Quadril esquerdo', d: 'M84.4,342.7 L121.6,349.2 L118.8,373.8 L70.1,377.1 Q58.7,360.7 67.1,347.5 Z' },
+  { key: 'F_quadrilD', label: 'Quadril direito', d: 'M164.4,342.7 L127.2,349.2 L130.1,373.8 L178.7,377.1 Q190.2,360.7 181.7,347.5 Z' },
+  { key: 'F_coxaAntE', label: 'Coxa anterior esquerda', d: 'M70.1,377.1 L118.8,373.8 L110.1,484.0 L61.5,485.6 Z' },
+  { key: 'F_coxaAntD', label: 'Coxa anterior direita', d: 'M178.7,377.1 L130.1,373.8 L138.7,484.0 L187.3,485.6 Z' },
+  { key: 'F_joelhoE', label: 'Joelho esquerdo', d: 'M61.5,485.6 L110.1,484.0 L107.3,510.3 L64.3,511.9 Z' },
+  { key: 'F_joelhoD', label: 'Joelho direito', d: 'M187.3,485.6 L138.7,484.0 L141.5,510.3 L184.5,511.9 Z' },
+  { key: 'F_panturrilhaE', label: 'Panturrilha esquerda', d: 'M64.3,511.9 L107.3,510.3 L98.7,607.3 L72.9,609.0 Z' },
+  { key: 'F_panturrilhaD', label: 'Panturrilha direita', d: 'M184.5,511.9 L141.5,510.3 L150.2,607.3 L175.9,609.0 Z' },
+  { key: 'F_tornozeloE', label: 'Tornozelo esquerdo', d: 'M72.9,609.0 L98.7,607.3 L95.8,625.4 L75.8,627.1 Z' },
+  { key: 'F_tornozeloD', label: 'Tornozelo direito', d: 'M175.9,609.0 L150.2,607.3 L153.0,625.4 L173.1,627.1 Z' },
+  { key: 'F_peE', label: 'Pé esquerdo', d: 'M75.8,627.1 L95.8,625.4 L107.3,646.8 L81.6,653.3 L55.7,648.4 Z' },
+  { key: 'F_peD', label: 'Pé direito', d: 'M173.1,627.1 L153.0,625.4 L141.5,646.8 L167.3,653.3 L193.2,648.4 Z' },
 ];
 
 const REGION_DEFS_BACK = [
-  { key:'B_cabeca_deco', label:null, decorative:true, shape:'circle', cx:150, cy:55, r:40 },
-  { key:'B_nuca', label:'Nuca', decorative:false, shape:'rect', x:126, y:98, w:48, h:34, rx:14 },
-  { key:'B_trapE', label:'Trapézio esquerdo', decorative:false, shape:'rect', x:28, y:133, w:62, h:40, rx:18 },
-  { key:'B_trapD', label:'Trapézio direito', decorative:false, shape:'rect', x:210, y:133, w:62, h:40, rx:18 },
-  { key:'B_bracoE', label:'Braço esquerdo', decorative:false, shape:'rect', x:28, y:176, w:62, h:156, rx:20 },
-  { key:'B_bracoD', label:'Braço direito', decorative:false, shape:'rect', x:210, y:176, w:62, h:156, rx:20 },
-  { key:'B_maoE', label:'Mão esquerda', decorative:false, shape:'rect', x:30, y:335, w:58, h:58, rx:20 },
-  { key:'B_maoD', label:'Mão direita', decorative:false, shape:'rect', x:212, y:335, w:58, h:58, rx:20 },
-  { key:'B_costasSup', label:'Costas superiores', decorative:false, shape:'rect', x:93, y:133, w:114, h:90, rx:20 },
-  { key:'B_lombar', label:'Lombar', decorative:false, shape:'rect', x:101, y:226, w:98, h:76, rx:20 },
-  { key:'B_quadrilE', label:'Quadril esquerdo', decorative:false, shape:'rect', x:90, y:305, w:58, h:40, rx:16 },
-  { key:'B_quadrilD', label:'Quadril direito', decorative:false, shape:'rect', x:152, y:305, w:58, h:40, rx:16 },
-  { key:'B_gluteoE', label:'Glúteo esquerdo', decorative:false, shape:'rect', x:90, y:348, w:58, h:62, rx:20 },
-  { key:'B_gluteoD', label:'Glúteo direito', decorative:false, shape:'rect', x:152, y:348, w:58, h:62, rx:20 },
-  { key:'B_coxaE', label:'Coxa posterior esquerda', decorative:false, shape:'rect', x:90, y:413, w:58, h:98, rx:20 },
-  { key:'B_coxaD', label:'Coxa posterior direita', decorative:false, shape:'rect', x:152, y:413, w:58, h:98, rx:20 },
-  { key:'B_pernaE', label:'Panturrilha esquerda', decorative:false, shape:'rect', x:93, y:514, w:52, h:148, rx:18 },
-  { key:'B_pernaD', label:'Panturrilha direita', decorative:false, shape:'rect', x:155, y:514, w:52, h:148, rx:18 },
-  { key:'B_peE', label:'Pé esquerdo', decorative:false, shape:'rect', x:85, y:665, w:60, h:52, rx:18 },
-  { key:'B_peD', label:'Pé direito', decorative:false, shape:'rect', x:155, y:665, w:60, h:52, rx:18 },
+  { key: 'B_cervical', label: 'Cervical', d: 'M87.0,193.0 L117.6,193.0 L112.5,211.0 L92.0,211.0 Z' },
+  { key: 'B_trapE', label: 'Trapézio esquerdo', d: 'M87.0,193.0 L58.8,196.2 Q30.7,204.4 20.5,222.4 L56.3,228.9 Q71.5,212.6 92.0,211.0 Z' },
+  { key: 'B_trapD', label: 'Trapézio direito', d: 'M117.6,193.0 L145.7,196.2 Q173.8,204.4 184.0,222.4 L148.3,228.9 Q133.0,212.6 112.5,211.0 Z' },
+  { key: 'B_ombroE', label: 'Ombro esquerdo', d: 'M20.5,222.4 Q10.2,241.9 17.8,259.9 L53.7,256.6 Q48.5,238.7 56.3,228.9 Z' },
+  { key: 'B_ombroD', label: 'Ombro direito', d: 'M184.0,222.4 Q194.3,241.9 186.7,259.9 L150.8,256.6 Q156.0,238.7 148.3,228.9 Z' },
+  { key: 'B_costasSup', label: 'Costas superiores', d: 'M56.3,228.9 L148.3,228.9 Q150.8,261.6 138.0,279.5 L66.5,279.5 Q53.7,261.6 56.3,228.9 Z' },
+  { key: 'B_costasMed', label: 'Costas médias', d: 'M66.5,279.5 L138.0,279.5 Q143.2,299.1 133.0,312.1 L71.5,312.1 Q61.3,299.1 66.5,279.5 Z' },
+  { key: 'B_bracoE', label: 'Braço esquerdo', d: 'M17.8,259.9 L53.7,256.6 L46.0,326.8 L10.2,330.1 Z' },
+  { key: 'B_bracoD', label: 'Braço direito', d: 'M186.7,259.9 L150.8,256.6 L158.5,326.8 L194.3,330.1 Z' },
+  { key: 'B_antebracoE', label: 'Antebraço esquerdo', d: 'M10.2,330.1 L46.0,326.8 L38.3,390.5 L5.1,393.7 Z' },
+  { key: 'B_antebracoD', label: 'Antebraço direito', d: 'M194.3,330.1 L158.5,326.8 L166.2,390.5 L199.5,393.7 Z' },
+  { key: 'B_punhoE', label: 'Punho esquerdo', d: 'M5.1,393.7 L38.3,390.5 L33.2,418.2 L0.0,421.5 Z' },
+  { key: 'B_punhoD', label: 'Punho direito', d: 'M199.5,393.7 L166.2,390.5 L168.8,418.2 L202.0,421.5 Z' },
+  { key: 'B_lombar', label: 'Lombar', d: 'M71.5,312.1 L133.0,312.1 Q138.0,331.7 127.8,341.6 L76.7,341.6 Q66.5,331.7 71.5,312.1 Z' },
+  { key: 'B_quadrilE', label: 'Quadril esquerdo', d: 'M81.8,366.0 L53.7,375.8 Q46.0,387.2 53.7,400.3 L94.6,397.1 L89.5,372.6 Z' },
+  { key: 'B_quadrilD', label: 'Quadril direito', d: 'M122.7,366.0 L150.8,375.8 Q158.5,387.2 150.8,400.3 L110.0,397.1 L115.0,372.6 Z' },
+  { key: 'B_gluteoE', label: 'Glúteo esquerdo', d: 'M53.7,375.9 L94.6,372.7 L90.7,403.6 L48.5,406.9 Z' },
+  { key: 'B_gluteoD', label: 'Glúteo direito', d: 'M150.8,375.9 L110.0,372.7 L113.8,403.6 L156.0,406.9 Z' },
+  { key: 'B_coxaPostE', label: 'Coxa posterior esquerda', d: 'M48.5,431.3 L90.7,428.0 L89.5,481.9 L46.0,483.6 Z' },
+  { key: 'B_coxaPostD', label: 'Coxa posterior direita', d: 'M156.0,431.3 L113.8,428.0 L115.0,481.9 L158.5,483.6 Z' },
+  { key: 'B_joelhoE', label: 'Joelho esquerdo', d: 'M46.0,483.6 L89.5,481.9 L87.0,508.1 L48.5,509.7 Z' },
+  { key: 'B_joelhoD', label: 'Joelho direito', d: 'M158.5,483.6 L115.0,481.9 L117.6,508.1 L156.0,509.7 Z' },
+  { key: 'B_panturrilhaE', label: 'Panturrilha esquerda', d: 'M48.5,509.7 L87.0,508.1 L79.3,604.3 L56.3,606.0 Z' },
+  { key: 'B_panturrilhaD', label: 'Panturrilha direita', d: 'M156.0,509.7 L117.6,508.1 L125.3,604.3 L148.3,606.0 Z' },
+  { key: 'B_tornozeloE', label: 'Tornozelo esquerdo', d: 'M56.3,606.0 L79.3,604.3 L76.7,622.3 L58.8,624.0 Z' },
+  { key: 'B_tornozeloD', label: 'Tornozelo direito', d: 'M148.3,606.0 L125.3,604.3 L127.8,622.3 L145.7,624.0 Z' },
+  { key: 'B_peE', label: 'Pé esquerdo', d: 'M58.8,624.0 L76.7,622.3 L87.0,643.5 L64.0,650.0 L40.8,645.2 Z' },
+  { key: 'B_peD', label: 'Pé direito', d: 'M145.7,624.0 L127.8,622.3 L117.6,643.5 L140.6,650.0 L163.7,645.2 Z' },
 ];
+
 
 
 function go(id){
@@ -1227,49 +1244,42 @@ function currentRegionDefs(){
   return bodyView === 'front' ? REGION_DEFS_FRONT : REGION_DEFS_BACK;
 }
 
-function allRegionDefs(){
-  return [].concat(REGION_DEFS_FRONT, REGION_DEFS_BACK);
+function currentMapImage(){
+  return 'map1-' + bodyView + '.png';
 }
 
-function shapeMarkup(r, selected){
-  const fill = r.decorative ? '#F1E0C1' : (selected ? '#9C3F29' : '#F1E0C1');
-  const fillOpacity = r.decorative ? '0.55' : '1';
-  const stroke = selected ? '#7A2F1E' : '#9C3F29';
-  const keyAttr = r.decorative ? '' : ' data-key="'+r.key+'"';
-  const cls = r.decorative ? 'region-shape region-decorative' : 'region-shape';
-  if(r.shape === 'circle'){
-    return '<circle'+keyAttr+' class="'+cls+'" cx="'+r.cx+'" cy="'+r.cy+'" r="'+r.r+'" fill="'+fill+'" fill-opacity="'+fillOpacity+'" stroke="'+stroke+'" stroke-width="1.5"></circle>';
-  }
-  return '<rect'+keyAttr+' class="'+cls+'" x="'+r.x+'" y="'+r.y+'" width="'+r.w+'" height="'+r.h+'" rx="'+r.rx+'" fill="'+fill+'" fill-opacity="'+fillOpacity+'" stroke="'+stroke+'" stroke-width="1.5"></rect>';
+function allRegionDefs(){
+  return [].concat(REGION_DEFS_FRONT, REGION_DEFS_BACK);
 }
 
 function renderBodyMap(){
   const container = document.getElementById('bodyMapContainer');
   const defs = currentRegionDefs();
-  let svgShapes = '';
+  let svgPaths = '';
   defs.forEach(r=>{
-    const on = !r.decorative && selectedRegions.has(r.key);
-    svgShapes += shapeMarkup(r, on);
+    const on = selectedRegions.has(r.key);
+    svgPaths += '<path data-key="'+r.key+'" class="region-path" d="'+r.d+'" fill="'+(on ? '#C98A2A' : 'transparent')+'" fill-opacity="'+(on?0.65:0)+'"></path>';
   });
   container.innerHTML =
-    '<svg viewBox="0 0 300 750" preserveAspectRatio="xMidYMid meet">' +
-      svgShapes +
+    '<svg viewBox="0 0 250 750" preserveAspectRatio="xMidYMid meet" xmlns:xlink="http://www.w3.org/1999/xlink">' +
+      '<image href="'+currentMapImage()+'" xlink:href="'+currentMapImage()+'" x="0" y="0" width="250" height="750"></image>' +
+      svgPaths +
     '</svg>';
-  container.querySelectorAll('.region-shape[data-key]').forEach(el=>{
-    el.addEventListener('click', ()=> toggleRegion(el));
+  container.querySelectorAll('.region-path').forEach(p=>{
+    p.addEventListener('click', ()=> toggleRegion(p));
   });
   renderCheckinChips();
 }
 
 // Só troca a cor da região tocada em vez de redesenhar o mapa inteiro —
 // bem mais rápido, principalmente em tablets mais simples.
-function toggleRegion(el){
-  const key = el.getAttribute('data-key');
+function toggleRegion(pathEl){
+  const key = pathEl.getAttribute('data-key');
   if(selectedRegions.has(key)) selectedRegions.delete(key);
   else selectedRegions.add(key);
   const on = selectedRegions.has(key);
-  el.setAttribute('fill', on ? '#9C3F29' : '#F1E0C1');
-  el.setAttribute('stroke', on ? '#7A2F1E' : '#9C3F29');
+  pathEl.setAttribute('fill', on ? '#C98A2A' : 'transparent');
+  pathEl.setAttribute('fill-opacity', on ? '0.65' : '0');
   renderCheckinChips();
 }
 
