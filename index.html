@@ -167,6 +167,15 @@
   .done-mark{width:72px; height:72px; border-radius:50%; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-size:34px;}
   .done-title{font-family:var(--serif); font-size:36px; font-weight:500;}
   .done-sub{font-size:19px; color:var(--ink-soft);}
+  .progress-visual{width:100%; max-width:340px; margin-top:4px; display:flex; flex-direction:column; align-items:center; gap:10px;}
+  .progress-dots{display:flex; align-items:center; gap:6px;}
+  .progress-dot{width:11px; height:11px; border-radius:50%; background:var(--line); flex-shrink:0;}
+  .progress-dot.filled{background:var(--accent);}
+  .progress-dot-line{width:16px; height:2px; background:var(--line); flex-shrink:0;}
+  .progress-dot-line.filled{background:var(--accent);}
+  .progress-bar-track{width:100%; height:8px; border-radius:999px; background:var(--chip-bg); overflow:hidden;}
+  .progress-bar-fill{height:100%; background:var(--accent); border-radius:999px; transition:width .4s ease;}
+  .progress-label{font-size:14px; color:var(--ink-soft);}
   .note-toggle{margin-top:8px; border:none; background:none; color:var(--ink-soft); font-size:13px; text-decoration:underline; cursor:pointer; font-family:inherit;}
   .note-box{width:360px; max-width:80vw; height:70px; margin-top:8px; padding:12px; border-radius:12px; border:1px solid var(--line); font-family:var(--sans); font-size:13px; resize:none;}
   .error-msg{background:var(--danger-soft); color:var(--accent-dark); border-radius:12px; padding:10px 16px; font-size:13px;}
@@ -467,6 +476,13 @@
   <div class="done-mark">&#10003;</div>
   <div class="done-title">Sessão registrada</div>
   <div class="done-sub" id="confirmSub"></div>
+
+  <div class="progress-visual" id="confirmProgress" style="display:none;">
+    <div class="progress-dots" id="confirmProgressDots"></div>
+    <div class="progress-bar-track"><div class="progress-bar-fill" id="confirmProgressFill"></div></div>
+    <div class="progress-label" id="confirmProgressLabel"></div>
+  </div>
+
   <button class="note-toggle" id="btnOpenNote">+ Adicionar nota privada</button>
   <textarea class="note-box" id="noteBox" placeholder="Nota privada — só você vê" style="display:none;"></textarea>
   <button class="btn-primary" id="btnFinish">Concluir</button>
@@ -1046,7 +1062,7 @@ function abrirCliente(c){
     document.getElementById('planSub').textContent = planLabel(c.tipo) + ' · atendimento avulso';
     note.textContent = '';
   } else {
-    document.getElementById('planSub').textContent = planLabel(c.tipo) + ' · sessão ' + c.sessoes_realizadas + ' de ' + c.total_sessoes;
+    document.getElementById('planSub').textContent = planLabel(c.tipo) + ' · sessão ' + (c.sessoes_realizadas + 1) + ' de ' + c.total_sessoes;
     const remaining = c.total_sessoes - c.sessoes_realizadas;
     note.textContent = (remaining === 2) ? ('Faltam apenas ' + remaining + ' sessões para concluir seu plano.') : '';
   }
@@ -1152,6 +1168,41 @@ function abrirUltimaSessao(){
 }
 
 document.getElementById('btnContinuarUltimaSessao').addEventListener('click', ()=> iniciarFluxoCheckin());
+
+function renderConfirmProgress(data){
+  const box = document.getElementById('confirmProgress');
+  if(!data){
+    box.style.display = 'none';
+    return;
+  }
+  box.style.display = 'flex';
+
+  const total = data.total_sessoes;
+  const feitas = data.sessoes_realizadas;
+  const pct = Math.round((feitas / total) * 100);
+
+  const dotsBox = document.getElementById('confirmProgressDots');
+  if(total <= 8){
+    dotsBox.style.display = 'flex';
+    dotsBox.innerHTML = '';
+    for(let i = 1; i <= total; i++){
+      const dot = document.createElement('span');
+      dot.className = 'progress-dot' + (i <= feitas ? ' filled' : '');
+      dotsBox.appendChild(dot);
+      if(i < total){
+        const line = document.createElement('span');
+        line.className = 'progress-dot-line' + (i < feitas ? ' filled' : '');
+        dotsBox.appendChild(line);
+      }
+    }
+  } else {
+    dotsBox.style.display = 'none';
+  }
+
+  document.getElementById('confirmProgressFill').style.width = pct + '%';
+  document.getElementById('confirmProgressLabel').textContent =
+    (pct === 100 ? '100% concluído — ciclo de cuidados encerrado' : pct + '% · ' + feitas + ' de ' + total + ' sessões');
+}
 
 function iniciarFluxoCheckin(){
   intensity = null; selectedRegions = new Set(); bodyView = 'back';
@@ -1346,7 +1397,8 @@ document.getElementById('btnConfirmSig').addEventListener('click', async ()=>{
     };
     document.getElementById('confirmSub').textContent = currentPlan.isAvulso
       ? (currentPlan.nome + ' · atendimento avulso')
-      : (currentPlan.nome + ' · sessão ' + data.sessoes_realizadas + ' de ' + data.total_sessoes);
+      : ('Você concluiu a sessão ' + data.sessoes_realizadas + ' de ' + data.total_sessoes);
+    renderConfirmProgress(currentPlan.isAvulso ? null : data);
     document.getElementById('noteBox').style.display = 'none';
     document.getElementById('noteBox').value = '';
     document.getElementById('btnOpenNote').style.display = 'inline-block';
@@ -1456,7 +1508,7 @@ function getContextoDiaOpcoes(sexo){
   if(sexo === 'masculino'){
     return ['Estressado','Ansioso','Cansado','Dormiu mal','Trabalho intenso','Exercício intenso','Dor de cabeça','Bruxismo'];
   }
-  return ['Estressada','Ansiosa','Cansada','Dormiu mal','Trabalho intenso','Exercício intenso','TPM','Menstruada','Ovulação','Dor de cabeça','Bruxismo'];
+  return ['Estressada','Ansiosa','Cansada','Dormiu mal','Trabalho intenso','Exercício intenso','TPM','Menstruada','Ovulação','Sintomas de menopausa','Dor de cabeça','Bruxismo'];
 }
 const REALIZADO_OPCOES = ['Relaxante','Terapêutica','Thai','Drenagem','Alongamentos','Liberação miofascial','Ventosa','Facial'];
 const PRESSAO_OPCOES = ['Leve','Média','Forte','Personalizada'];
