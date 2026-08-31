@@ -136,6 +136,35 @@
 
   }
 
+  /* ---- Ficha da cliente (redesenho) ---- */
+  .ficha-actions{display:flex; gap:10px; margin:12px 0 16px;}
+  .ficha-action-btn{flex:1; min-height:48px; padding:12px 16px; font-size:15px; margin:0;}
+  .ficha-columns{flex:1; min-height:0; display:flex; flex-direction:column; gap:22px; overflow:auto;}
+  .ficha-col-left{display:flex; flex-direction:column; flex-shrink:0;}
+  .ficha-col-right{display:flex; flex-direction:column; min-height:0;}
+  .ficha-section-title{font-family:var(--serif); font-size:17px; color:var(--staff-text); margin-bottom:8px;}
+  .ficha-collapsible-header{display:flex; justify-content:space-between; align-items:center; width:100%; background:var(--staff-card); border:1px solid var(--staff-border); border-radius:12px; padding:13px 16px; font-size:15px; font-weight:600; color:var(--staff-text); cursor:pointer; font-family:inherit; margin-top:10px;}
+  .ficha-collapsible-body{padding:12px 2px 4px;}
+  .chevron{transition:transform .2s; color:var(--staff-text-soft);}
+  .chevron.open{transform:rotate(180deg);}
+  .plano-atual-card{background:var(--staff-card); border:1.5px solid var(--gold); border-radius:16px; padding:18px 20px;}
+  .plano-atual-tipo{font-family:var(--serif); font-size:19px; color:var(--staff-text);}
+  .plano-atual-row{display:flex; justify-content:space-between; align-items:baseline; margin-top:10px; font-size:14px;}
+  .plano-atual-row .label{color:var(--staff-text-soft);}
+  .plano-atual-row .value{font-weight:600; color:var(--staff-text);}
+  .plano-dots{display:flex; align-items:center; gap:4px; margin-top:8px;}
+  .plano-dot{width:9px; height:9px; border-radius:50%; background:var(--staff-border); flex-shrink:0;}
+  .plano-dot.filled{background:var(--gold);}
+  .plano-anterior-card{background:var(--staff-card); border:1px solid var(--staff-border); border-radius:12px; padding:13px 16px; font-size:13px; margin-bottom:8px;}
+  .ficha-historico-list{display:flex; flex-direction:column; gap:8px; overflow:auto; padding-right:2px;}
+  .historico-card-compact{background:var(--staff-card); border:1px solid var(--staff-border); border-radius:12px; padding:12px 16px; font-size:13px; line-height:1.5;}
+
+  @media (orientation:landscape) and (min-width:680px){
+    .ficha-columns{flex-direction:row; align-items:flex-start;}
+    .ficha-col-left{flex:0 0 380px; max-height:100%; overflow-y:auto; padding-right:4px;}
+    .ficha-col-right{flex:1; min-width:0; height:100%;}
+  }
+
   .resumo-card{background:var(--staff-card); border:1px solid var(--staff-border); border-radius:16px; padding:20px 22px;}
   .resumo-card-label{font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--staff-text-soft); font-weight:600;}
   .resumo-card-primary{border-left:6px solid var(--gold); padding-left:19px;}
@@ -587,7 +616,7 @@
 </div>
 
 <!-- Tela: ficha clínica + histórico completo (uso interno) -->
-<div class="screen" id="screen-ficha" style="background:var(--staff-bg); color:var(--staff-text); padding:36px 40px; align-items:stretch;">
+<div class="screen" id="screen-ficha" style="background:var(--staff-bg); color:var(--staff-text); padding:28px 36px; align-items:stretch;">
   <div class="list-eyebrow">Painel interno &middot; não mostrar à cliente</div>
   <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
     <div class="list-title" id="fichaTitulo" style="font-size:22px;">Ficha clínica</div>
@@ -608,50 +637,62 @@
     </div>
   </div>
 
-  <div style="margin:14px 0;">
-    <button class="btn-primary" id="btnIniciarAtendimentoFicha" style="display:none; width:100%; margin-top:0;">Iniciar atendimento</button>
-    <button class="btn-primary" id="btnCriarNovoPlanoFicha" style="display:none; width:100%; margin-top:0;">+ Criar novo plano</button>
-    <button class="btn-ghost" id="btnAtendimentoAvulso" style="width:100%; border-color:var(--staff-border); color:var(--staff-text); margin-top:8px;">Atendimento avulso (sem plano)</button>
+  <div class="ficha-actions">
+    <button class="btn-primary ficha-action-btn" id="btnIniciarAtendimentoFicha" style="display:none;">Iniciar atendimento</button>
+    <button class="btn-primary ficha-action-btn" id="btnCriarNovoPlanoFicha" style="display:none;">+ Novo plano</button>
+    <button class="btn-ghost ficha-action-btn" id="btnAtendimentoAvulso" style="border-color:var(--staff-border); color:var(--staff-text);">Atendimento avulso</button>
   </div>
 
-  <div class="newclient-form" style="overflow:auto; flex:1;">
+  <div class="ficha-columns">
+    <div class="ficha-col-left">
+      <div class="ficha-section-title">Plano atual</div>
+      <div id="fichaPlanoAtual"></div>
 
-    <div class="list-title" style="font-size:18px;">Planos</div>
-    <div id="fichaPlanos" style="display:flex; flex-direction:column; gap:10px; margin-top:8px; margin-bottom:20px;"></div>
+      <button class="ficha-collapsible-header" id="togglePlanosAnteriores">
+        <span id="labelPlanosAnteriores">Planos anteriores</span><span class="chevron" id="chevronPlanosAnteriores">&#9662;</span>
+      </button>
+      <div id="fichaPlanosAnteriores" class="ficha-collapsible-body" style="display:none;"></div>
 
-    <div class="list-title" style="font-size:18px;">Dados cadastrais</div>
-    <label class="nc-label">Profissão</label>
-    <input type="text" id="fcProfissao" class="nc-input">
-    <label class="nc-label">Idade</label>
-    <input type="number" id="fcIdade" class="nc-input">
-    <label class="nc-label">Telefone</label>
-    <input type="text" id="fcTelefone" class="nc-input">
-    <label class="nc-label">Objetivo principal</label>
-    <textarea id="fcObjetivo" class="nc-input" style="height:48px;"></textarea>
-    <label class="nc-label">Queixa principal</label>
-    <textarea id="fcQueixa" class="nc-input" style="height:48px;"></textarea>
-    <label class="nc-label">Histórico de lesões</label>
-    <textarea id="fcLesoes" class="nc-input" style="height:48px;"></textarea>
-    <label class="nc-label">Cirurgias</label>
-    <textarea id="fcCirurgias" class="nc-input" style="height:48px;"></textarea>
-    <label class="nc-label">Doenças</label>
-    <textarea id="fcDoencas" class="nc-input" style="height:48px;"></textarea>
-    <label class="nc-label">Medicamentos</label>
-    <textarea id="fcMedicamentos" class="nc-input" style="height:48px;"></textarea>
-    <label class="nc-label">Alergias</label>
-    <textarea id="fcAlergias" class="nc-input" style="height:48px;"></textarea>
-    <label class="nc-label">Atividades físicas</label>
-    <textarea id="fcAtividades" class="nc-input" style="height:48px;"></textarea>
-    <label class="nc-label">Restrições</label>
-    <textarea id="fcRestricoes" class="nc-input" style="height:48px;"></textarea>
-    <label class="nc-label">Observações gerais</label>
-    <textarea id="fcObservacoes" class="nc-input" style="height:48px;"></textarea>
+      <button class="ficha-collapsible-header" id="toggleDadosCadastrais">
+        <span>Dados cadastrais</span><span class="chevron" id="chevronDadosCadastrais">&#9662;</span>
+      </button>
+      <div id="fichaDadosCadastraisBody" class="ficha-collapsible-body" style="display:none;">
+        <label class="nc-label">Profissão</label>
+        <input type="text" id="fcProfissao" class="nc-input">
+        <label class="nc-label">Idade</label>
+        <input type="number" id="fcIdade" class="nc-input">
+        <label class="nc-label">Telefone</label>
+        <input type="text" id="fcTelefone" class="nc-input">
+        <label class="nc-label">Objetivo principal</label>
+        <textarea id="fcObjetivo" class="nc-input" style="height:48px;"></textarea>
+        <label class="nc-label">Queixa principal</label>
+        <textarea id="fcQueixa" class="nc-input" style="height:48px;"></textarea>
+        <label class="nc-label">Histórico de lesões</label>
+        <textarea id="fcLesoes" class="nc-input" style="height:48px;"></textarea>
+        <label class="nc-label">Cirurgias</label>
+        <textarea id="fcCirurgias" class="nc-input" style="height:48px;"></textarea>
+        <label class="nc-label">Doenças</label>
+        <textarea id="fcDoencas" class="nc-input" style="height:48px;"></textarea>
+        <label class="nc-label">Medicamentos</label>
+        <textarea id="fcMedicamentos" class="nc-input" style="height:48px;"></textarea>
+        <label class="nc-label">Alergias</label>
+        <textarea id="fcAlergias" class="nc-input" style="height:48px;"></textarea>
+        <label class="nc-label">Atividades físicas</label>
+        <textarea id="fcAtividades" class="nc-input" style="height:48px;"></textarea>
+        <label class="nc-label">Restrições</label>
+        <textarea id="fcRestricoes" class="nc-input" style="height:48px;"></textarea>
+        <label class="nc-label">Observações gerais</label>
+        <textarea id="fcObservacoes" class="nc-input" style="height:48px;"></textarea>
+        <button class="btn-primary" id="btnSaveFicha" style="margin-top:14px;">Salvar ficha</button>
+      </div>
+    </div>
 
-    <button class="btn-primary" id="btnSaveFicha" style="margin-top:14px;">Salvar ficha</button>
-
-    <div class="list-title" style="font-size:18px; margin-top:26px;">Histórico completo</div>
-    <div id="fichaHistorico" style="display:flex; flex-direction:column; gap:10px; margin-top:8px;"></div>
+    <div class="ficha-col-right">
+      <div class="ficha-section-title">Histórico completo</div>
+      <div id="fichaHistorico" class="ficha-historico-list"></div>
+    </div>
   </div>
+
   <button class="btn-ghost" id="btnCloseFicha" style="border-color:var(--staff-border); color:var(--staff-text); margin-top:14px;">Voltar para a lista</button>
 </div>
 
@@ -1490,11 +1531,11 @@ function getContextoDiaOpcoes(sexo){
   }
   return ['Estressada','Ansiosa','Cansada','Dormiu mal','Trabalho intenso','Exercício intenso','TPM','Menstruada','Ovulação','Sintomas de menopausa','Dor de cabeça','Bruxismo'];
 }
-const REALIZADO_OPCOES = ['Relaxante','Terapêutica','Thai','Drenagem','Alongamentos','Liberação miofascial','Ventosa','Facial'];
+const REALIZADO_OPCOES = ['Relaxante','Terapêutica','Thai','Drenagem','Alongamentos','Liberação miofascial','Ventosa','Facial','Auriculoterapia'];
 const PRESSAO_OPCOES = ['Leve','Média','Forte','Personalizada'];
 function getAtencaoOpcoes(sexo){
   var tenso = sexo === 'masculino' ? 'Muito tenso' : 'Muito tensa';
-  return ['Relaxou rapidamente','Demorou para relaxar','Dormiu durante a sessão','Muito sensível ao toque','Precisou diminuir pressão','Precisou aumentar pressão','Respiração curta',tenso,'Conversou bastante','Ficou em silêncio','Chorou','Riu','Dor mudou durante a sessão','Voltou melhor que na última sessão'];
+  return ['Relaxou rapidamente','Demorou para relaxar','Dormiu durante a sessão','Muito sensível ao toque','Precisou diminuir pressão','Precisou aumentar pressão','Respiração curta',tenso,'Conversou bastante','Ficou em silêncio','Chorou','Riu','Dor mudou durante a sessão','Voltou melhor que na última sessão','Congestão nasal','Bebeu água','Bebeu chá','Comeu bolachinha'];
 }
 
 let regChegadaValor = '';
@@ -1719,7 +1760,11 @@ async function abrirFicha(c){
   document.getElementById('editarDadosBasicosForm').style.display = 'none';
   ['fcProfissao','fcIdade','fcTelefone','fcObjetivo','fcQueixa','fcLesoes','fcCirurgias','fcDoencas','fcMedicamentos','fcAlergias','fcAtividades','fcRestricoes','fcObservacoes'].forEach(id=> document.getElementById(id).value = '');
   document.getElementById('fichaHistorico').innerHTML = 'Carregando...';
-  document.getElementById('fichaPlanos').innerHTML = 'Carregando...';
+  document.getElementById('fichaPlanoAtual').innerHTML = 'Carregando...';
+  document.getElementById('fichaPlanosAnteriores').style.display = 'none';
+  document.getElementById('chevronPlanosAnteriores').classList.remove('open');
+  document.getElementById('fichaDadosCadastraisBody').style.display = 'none';
+  document.getElementById('chevronDadosCadastrais').classList.remove('open');
 
   const btnIniciar = document.getElementById('btnIniciarAtendimentoFicha');
   const btnNovoPlano = document.getElementById('btnCriarNovoPlanoFicha');
@@ -1763,93 +1808,127 @@ async function abrirFicha(c){
     renderFichaHistorico(Array.isArray(dados.historico) ? dados.historico : []);
   }catch(err){
     console.error('Erro ao carregar ficha de', c.id_cliente, err);
-    document.getElementById('fichaPlanos').innerHTML = '<div class="history-empty">Não foi possível carregar: ' + err.message + '</div>';
+    document.getElementById('fichaPlanoAtual').innerHTML = '<div class="history-empty">Não foi possível carregar: ' + err.message + '</div>';
     document.getElementById('fichaHistorico').innerHTML = '';
   }
 }
 
 function renderFichaPlanos(planos){
-  const box = document.getElementById('fichaPlanos');
-  if(!planos || planos.length === 0){
-    box.innerHTML = '<div class="history-empty">Nenhum plano cadastrado ainda.</div>';
-    return;
+  planos = planos || [];
+  const atual = planos.find(p=> p.status === 'ativo') || planos.find(p=> p.status === 'vencido') || null;
+  const anteriores = planos.filter(p=> p !== atual);
+
+  const boxAtual = document.getElementById('fichaPlanoAtual');
+  if(!atual){
+    boxAtual.innerHTML = '<div class="history-empty">Nenhum plano ativo no momento.</div>';
+  } else {
+    boxAtual.innerHTML = '';
+    boxAtual.appendChild(buildPlanoCard(atual, true));
   }
+
+  const boxAnteriores = document.getElementById('fichaPlanosAnteriores');
+  document.getElementById('labelPlanosAnteriores').textContent = 'Planos anteriores (' + anteriores.length + ')';
+  boxAnteriores.innerHTML = '';
+  if(anteriores.length === 0){
+    boxAnteriores.innerHTML = '<div class="history-empty">Nenhum outro plano.</div>';
+  } else {
+    anteriores.forEach(p=> boxAnteriores.appendChild(buildPlanoCard(p, false)));
+  }
+}
+
+function buildPlanoCard(p, prominent){
   const statusLabels = {ativo:'Ativo', vencido:'Vencido', concluido:'Concluído', cancelado:'Cancelado'};
-  box.innerHTML = '';
-  planos.forEach(p=>{
-    const card = document.createElement('div');
-    card.style.background = 'var(--staff-card)';
-    card.style.border = '1px solid var(--staff-border)';
-    card.style.borderRadius = '12px';
-    card.style.padding = '12px 16px';
-    card.style.fontSize = '14px';
-    card.innerHTML =
-      '<div style="font-weight:600;">'+planLabel(p.tipo)+' &middot; '+(statusLabels[p.status]||p.status)+'</div>' +
-      '<div style="color:var(--staff-text-soft); margin-top:2px;">Sessões: '+p.sessoes_realizadas+' de '+p.total_sessoes+' &middot; Validade: '+(p.validade||'—')+'</div>' +
-      '<div style="color:var(--staff-text-soft); margin-top:2px;">Pagamento: '+labelStatusPagamentoJS(p.status_pagamento)+(p.status_pagamento==='parcial' ? ' (restam R$ '+Number(p.valor_restante).toFixed(2).replace('.',',')+')' : '')+'</div>' +
-      '<button class="note-toggle" data-editpag style="margin-top:6px; padding:0;">Atualizar pagamento</button>' +
-      '<div data-pagform style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid var(--staff-border);">' +
-        '<div class="chip-select-grid">' +
-          '<button class="chip-select" data-pagopt="integral">Pago integralmente</button>' +
-          '<button class="chip-select" data-pagopt="parcial">Pago parcialmente</button>' +
-          '<button class="chip-select" data-pagopt="pendente">Pendente</button>' +
-        '</div>' +
-        '<input type="number" class="nc-input" data-valorpago style="margin-top:8px; display:none;" placeholder="Valor pago (R$)">' +
-        '<input type="date" class="nc-input" data-datapag style="margin-top:8px;">' +
-        '<select class="nc-input" data-formapag style="margin-top:8px;">' +
-          '<option value="">Forma de pagamento (opcional)</option>' +
-          '<option value="PIX">PIX</option>' +
-          '<option value="Dinheiro">Dinheiro</option>' +
-          '<option value="Cartão">Cartão</option>' +
-          '<option value="Outros">Outros</option>' +
-        '</select>' +
-        '<button class="btn-primary" data-salvarpag style="margin-top:8px; width:100%;">Salvar pagamento</button>' +
-      '</div>';
+  const card = document.createElement('div');
+  card.className = prominent ? 'plano-atual-card' : 'plano-anterior-card';
 
-    const formDiv = card.querySelector('[data-pagform]');
-    card.querySelector('[data-editpag]').addEventListener('click', ()=>{
-      formDiv.style.display = formDiv.style.display === 'none' ? 'block' : 'none';
-    });
-    let statusEscolhido = p.status_pagamento;
-    card.querySelectorAll('[data-pagopt]').forEach(btn=>{
-      if(btn.dataset.pagopt === statusEscolhido) btn.classList.add('selected');
-      btn.addEventListener('click', ()=>{
-        statusEscolhido = btn.dataset.pagopt;
-        card.querySelectorAll('[data-pagopt]').forEach(b=>b.classList.remove('selected'));
-        btn.classList.add('selected');
-        card.querySelector('[data-valorpago]').style.display = statusEscolhido === 'parcial' ? 'block' : 'none';
-      });
-    });
-    if(statusEscolhido === 'parcial') card.querySelector('[data-valorpago]').style.display = 'block';
-    card.querySelector('[data-valorpago]').value = p.valor_pago || '';
-    card.querySelector('[data-datapag]').value = p.data_pagamento || '';
-
-    card.querySelector('[data-salvarpag]').addEventListener('click', async ()=>{
-      const btn = card.querySelector('[data-salvarpag]');
-      btn.disabled = true; btn.textContent = 'Salvando...';
-      try{
-        await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'updatePagamentoPlano',
-            id_plano: p.id_plano,
-            status_pagamento: statusEscolhido,
-            valor_pago: card.querySelector('[data-valorpago]').value,
-            data_pagamento: card.querySelector('[data-datapag]').value,
-            forma_pagamento: card.querySelector('[data-formapag]').value
-          })
-        });
-        const res = await fetch(API_URL + '?action=planosCliente&id_cliente=' + encodeURIComponent(fichaClienteAtual.id_cliente));
-        const planosAtualizados = await res.json();
-        renderFichaPlanos(planosAtualizados);
-      }catch(err){
-        btn.disabled = false; btn.textContent = 'Salvar pagamento';
-        alert('Não foi possível salvar: ' + err.message);
+  let dotsHtml = '';
+  if(prominent){
+    const total = Number(p.total_sessoes) || 0;
+    const feitas = Number(p.sessoes_realizadas) || 0;
+    if(total > 0 && total <= 12){
+      for(let i=1; i<=total; i++){
+        dotsHtml += '<span class="plano-dot'+(i<=feitas?' filled':'')+'"></span>';
       }
-    });
+    }
+  }
 
-    box.appendChild(card);
+  const restanteTxt = p.status_pagamento==='parcial' ? ' (restam R$ '+Number(p.valor_restante).toFixed(2).replace('.',',')+')' : '';
+
+  card.innerHTML =
+    (prominent ? '<div class="plano-atual-tipo">'+planLabel(p.tipo)+'</div>' : '<div style="font-weight:600;">'+planLabel(p.tipo)+' &middot; '+(statusLabels[p.status]||p.status)+'</div>') +
+    (prominent ?
+      '<div class="plano-atual-row"><span class="label">Sessões</span><span class="value">'+p.sessoes_realizadas+' de '+p.total_sessoes+'</span></div>' +
+      (dotsHtml ? '<div class="plano-dots">'+dotsHtml+'</div>' : '') +
+      '<div class="plano-atual-row"><span class="label">Status</span><span class="value">'+(statusLabels[p.status]||p.status)+'</span></div>' +
+      '<div class="plano-atual-row"><span class="label">Pagamento</span><span class="value">'+labelStatusPagamentoJS(p.status_pagamento)+restanteTxt+'</span></div>' +
+      '<div class="plano-atual-row"><span class="label">Data do pagamento</span><span class="value">'+(p.data_pagamento?formatDatePt(p.data_pagamento):'—')+'</span></div>' +
+      '<div class="plano-atual-row"><span class="label">Validade</span><span class="value">'+(p.validade?formatDatePt(p.validade):'—')+'</span></div>'
+      :
+      '<div style="color:var(--staff-text-soft); margin-top:2px;">Sessões: '+p.sessoes_realizadas+' de '+p.total_sessoes+' &middot; Validade: '+(p.validade?formatDatePt(p.validade):'—')+'</div>' +
+      '<div style="color:var(--staff-text-soft); margin-top:2px;">Pagamento: '+labelStatusPagamentoJS(p.status_pagamento)+restanteTxt+'</div>'
+    ) +
+    '<button class="note-toggle" data-editpag style="margin-top:'+(prominent?'10px':'6px')+'; padding:0;">Atualizar pagamento</button>' +
+    '<div data-pagform style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid var(--staff-border);">' +
+      '<div class="chip-select-grid">' +
+        '<button class="chip-select" data-pagopt="integral">Pago integralmente</button>' +
+        '<button class="chip-select" data-pagopt="parcial">Pago parcialmente</button>' +
+        '<button class="chip-select" data-pagopt="pendente">Pendente</button>' +
+      '</div>' +
+      '<input type="number" class="nc-input" data-valorpago style="margin-top:8px; display:none;" placeholder="Valor pago (R$)">' +
+      '<input type="date" class="nc-input" data-datapag style="margin-top:8px;">' +
+      '<select class="nc-input" data-formapag style="margin-top:8px;">' +
+        '<option value="">Forma de pagamento (opcional)</option>' +
+        '<option value="PIX">PIX</option>' +
+        '<option value="Dinheiro">Dinheiro</option>' +
+        '<option value="Cartão">Cartão</option>' +
+        '<option value="Outros">Outros</option>' +
+      '</select>' +
+      '<button class="btn-primary" data-salvarpag style="margin-top:8px; width:100%;">Salvar pagamento</button>' +
+    '</div>';
+
+  const formDiv = card.querySelector('[data-pagform]');
+  card.querySelector('[data-editpag]').addEventListener('click', ()=>{
+    formDiv.style.display = formDiv.style.display === 'none' ? 'block' : 'none';
   });
+  let statusEscolhido = p.status_pagamento;
+  card.querySelectorAll('[data-pagopt]').forEach(btn=>{
+    if(btn.dataset.pagopt === statusEscolhido) btn.classList.add('selected');
+    btn.addEventListener('click', ()=>{
+      statusEscolhido = btn.dataset.pagopt;
+      card.querySelectorAll('[data-pagopt]').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+      card.querySelector('[data-valorpago]').style.display = statusEscolhido === 'parcial' ? 'block' : 'none';
+    });
+  });
+  if(statusEscolhido === 'parcial') card.querySelector('[data-valorpago]').style.display = 'block';
+  card.querySelector('[data-valorpago]').value = p.valor_pago || '';
+  card.querySelector('[data-datapag]').value = p.data_pagamento || '';
+
+  card.querySelector('[data-salvarpag]').addEventListener('click', async ()=>{
+    const btn = card.querySelector('[data-salvarpag]');
+    btn.disabled = true; btn.textContent = 'Salvando...';
+    try{
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'updatePagamentoPlano',
+          id_plano: p.id_plano,
+          status_pagamento: statusEscolhido,
+          valor_pago: card.querySelector('[data-valorpago]').value,
+          data_pagamento: card.querySelector('[data-datapag]').value,
+          forma_pagamento: card.querySelector('[data-formapag]').value
+        })
+      });
+      const res = await fetch(API_URL + '?action=planosCliente&id_cliente=' + encodeURIComponent(fichaClienteAtual.id_cliente));
+      const planosAtualizados = await res.json();
+      renderFichaPlanos(planosAtualizados);
+    }catch(err){
+      btn.disabled = false; btn.textContent = 'Salvar pagamento';
+      alert('Não foi possível salvar: ' + err.message);
+    }
+  });
+
+  return card;
 }
 
 function labelStatusPagamentoJS(status){
@@ -1881,6 +1960,18 @@ document.getElementById('btnCriarNovoPlanoFicha').addEventListener('click', ()=>
   if(!fichaClienteAtual) return;
   abrirNovoPlanoParaCliente(fichaClienteAtual);
 });
+
+function setupCollapsible(headerId, bodyId, chevronId){
+  document.getElementById(headerId).addEventListener('click', ()=>{
+    const body = document.getElementById(bodyId);
+    const chevron = document.getElementById(chevronId);
+    const open = body.style.display !== 'none';
+    body.style.display = open ? 'none' : 'block';
+    chevron.classList.toggle('open', !open);
+  });
+}
+setupCollapsible('togglePlanosAnteriores', 'fichaPlanosAnteriores', 'chevronPlanosAnteriores');
+setupCollapsible('toggleDadosCadastrais', 'fichaDadosCadastraisBody', 'chevronDadosCadastrais');
 
 document.getElementById('btnEditarDadosBasicos').addEventListener('click', ()=>{
   if(!fichaClienteAtual) return;
@@ -1964,27 +2055,32 @@ function renderFichaHistorico(sessoes){
   box.innerHTML = '';
   sessoes.forEach(s=>{
     const card = document.createElement('div');
-    card.style.background = 'var(--staff-card)';
-    card.style.border = '1px solid var(--staff-border)';
-    card.style.borderRadius = '12px';
-    card.style.padding = '14px 16px';
-    card.style.fontSize = '13px';
+    card.className = 'historico-card-compact';
     const r = s.registro || {};
     const tituloSessao = s.isAvulso
-      ? ('Atendimento avulso — ' + formatDatePt(s.data))
+      ? ('Avulso — ' + formatDatePt(s.data))
       : ('Sessão ' + s.numero_sessao + ' — ' + formatDatePt(s.data));
+
+    const linha2Parts = ['Dor: ' + s.intensidade + '/10', 'Regiões: ' + (s.regioes || '—')];
+    if(s.isAvulso) linha2Parts.push('R$ ' + formatBRL(s.valorCobrado).replace('R$ ','') + (s.formaPagamento ? ' ('+s.formaPagamento+')' : ''));
+
+    const detalhes = [];
+    if(r.chegada || r.saida) detalhes.push('Chegou ' + (r.chegada||'—') + ' &middot; Saiu ' + (r.saida||'—'));
+    if(r.contexto_dia) detalhes.push('Contexto: ' + r.contexto_dia);
+    if(r.realizado) detalhes.push('Realizado: ' + r.realizado);
+    if(r.pressao) detalhes.push('Pressão: ' + r.pressao);
+    if(r.atencao) detalhes.push('Atenção: ' + r.atencao);
+    if(r.observar_texto) detalhes.push((r.observar_ativo?'⭐ ':'') + 'Observar: ' + r.observar_texto);
+    if(r.insight_cliente) detalhes.push('Insight: "' + r.insight_cliente + '"');
+    if(s.observacao_interna) detalhes.push('Nota: ' + s.observacao_interna);
+
     card.innerHTML =
-      '<div style="font-family:var(--serif); font-size:16px; margin-bottom:6px;">' + tituloSessao + (s.isAvulso ? ' <span style="font-size:11px; color:var(--gold); font-family:var(--sans); font-weight:600;">AVULSO</span>' : '') + '</div>' +
-      '<div style="color:var(--staff-text-soft); margin-bottom:6px;">Intensidade: ' + s.intensidade + ' / 10 &middot; Regiões: ' + (s.regioes || '—') + '</div>' +
-      (s.isAvulso ? '<div style="margin-bottom:4px;">Valor cobrado: ' + formatBRL(s.valorCobrado) + (s.formaPagamento ? ' (' + s.formaPagamento + ')' : '') + '</div>' : '') +
-      (r.chegada || r.saida ? '<div style="margin-bottom:4px;">Chegou: ' + (r.chegada||'—') + ' &middot; Saiu: ' + (r.saida||'—') + '</div>' : '') +
-      (r.contexto_dia ? '<div style="margin-bottom:4px;">Contexto do dia: ' + r.contexto_dia + '</div>' : '') +
-      (r.realizado ? '<div style="margin-bottom:4px;">Realizado: ' + r.realizado + '</div>' : '') +
-      (r.pressao ? '<div style="margin-bottom:4px;">Pressão: ' + r.pressao + '</div>' : '') +
-      (r.atencao ? '<div style="margin-bottom:4px;">Chamou atenção: ' + r.atencao + '</div>' : '') +
-      (r.observar_texto ? '<div style="margin-bottom:4px;">' + (r.observar_ativo ? '⭐ ' : '') + 'Observar: ' + r.observar_texto + '</div>' : '') +
-      (r.insight_cliente ? '<div style="margin-bottom:4px;">Insight da cliente: "' + r.insight_cliente + '"</div>' : '') +
-      (s.observacao_interna ? '<div style="margin-bottom:4px;">Nota privada: ' + s.observacao_interna + '</div>' : '');
+      '<div style="display:flex; justify-content:space-between; align-items:baseline;">' +
+        '<span style="font-family:var(--serif); font-size:15px;">' + tituloSessao + '</span>' +
+        (s.isAvulso ? '<span style="font-size:10px; color:var(--gold); font-weight:700;">AVULSO</span>' : '') +
+      '</div>' +
+      '<div style="color:var(--staff-text-soft); margin-top:2px;">' + linha2Parts.join(' &middot; ') + '</div>' +
+      (detalhes.length ? '<div style="margin-top:4px; color:var(--staff-text);">' + detalhes.join(' &middot; ') + '</div>' : '');
     box.appendChild(card);
   });
 }
