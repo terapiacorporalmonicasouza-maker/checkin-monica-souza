@@ -1837,7 +1837,7 @@ function renderFichaPlanos(planos){
 }
 
 function buildPlanoCard(p, prominent){
-  const statusLabels = {ativo:'Ativo', vencido:'Vencido', concluido:'Concluído', cancelado:'Cancelado'};
+  const statusLabels = {ativo:'Ativo', vencido:'Vencido', concluido:'Concluído', cancelado:'Cancelado', encerrado:'Encerrado'};
   const card = document.createElement('div');
   card.className = prominent ? 'plano-atual-card' : 'plano-anterior-card';
 
@@ -1884,7 +1884,33 @@ function buildPlanoCard(p, prominent){
         '<option value="Outros">Outros</option>' +
       '</select>' +
       '<button class="btn-primary" data-salvarpag style="margin-top:8px; width:100%;">Salvar pagamento</button>' +
-    '</div>';
+    '</div>' +
+    (prominent && (p.status === 'ativo' || p.status === 'vencido') ?
+      '<button class="note-toggle" data-toggleencerrar style="margin-top:10px; padding:0; color:var(--danger);">Encerrar plano</button>' +
+      '<div data-encerrarform style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid var(--staff-border);">' +
+        '<div style="font-weight:600; margin-bottom:6px;">Encerrar este plano?</div>' +
+        '<div style="font-size:13px; color:var(--staff-text-soft); margin-bottom:10px;">' +
+          'Sessões realizadas: '+p.sessoes_realizadas+' &middot; Sessões restantes: '+(p.total_sessoes-p.sessoes_realizadas)+'<br>' +
+          'Status atual do pagamento: '+labelStatusPagamentoJS(p.status_pagamento) +
+        '</div>' +
+        '<label class="nc-label">Valor efetivamente recebido (R$)</label>' +
+        '<input type="number" class="nc-input" data-valorrecebido min="0" step="0.01" placeholder="Ex: 100" value="'+(p.valor_pago||'')+'">' +
+        '<label class="nc-label" style="margin-top:8px;">Data do pagamento</label>' +
+        '<input type="date" class="nc-input" data-dataencerrar value="'+(p.data_pagamento||'')+'">' +
+        '<label class="nc-label" style="margin-top:8px;">Forma de pagamento</label>' +
+        '<select class="nc-input" data-formaencerrar>' +
+          '<option value="">Não informar</option>' +
+          '<option value="PIX">PIX</option>' +
+          '<option value="Dinheiro">Dinheiro</option>' +
+          '<option value="Cartão">Cartão</option>' +
+          '<option value="Outros">Outros</option>' +
+        '</select>' +
+        '<div style="display:flex; gap:10px; margin-top:12px;">' +
+          '<button class="btn-ghost" data-cancelarencerrar style="flex:1; border-color:var(--staff-border); color:var(--staff-text); margin:0;">Cancelar</button>' +
+          '<button class="btn-primary" data-confirmarencerrar style="flex:1; margin:0; background:var(--danger);">Confirmar encerramento</button>' +
+        '</div>' +
+      '</div>'
+      : '');
 
   const formDiv = card.querySelector('[data-pagform]');
   card.querySelector('[data-editpag]').addEventListener('click', ()=>{
@@ -1927,6 +1953,40 @@ function buildPlanoCard(p, prominent){
       alert('Não foi possível salvar: ' + err.message);
     }
   });
+
+  const toggleEncerrar = card.querySelector('[data-toggleencerrar]');
+  if(toggleEncerrar){
+    const encerrarForm = card.querySelector('[data-encerrarform]');
+    toggleEncerrar.addEventListener('click', ()=>{
+      encerrarForm.style.display = encerrarForm.style.display === 'none' ? 'block' : 'none';
+    });
+    card.querySelector('[data-cancelarencerrar]').addEventListener('click', ()=>{
+      encerrarForm.style.display = 'none';
+    });
+    card.querySelector('[data-confirmarencerrar]').addEventListener('click', async ()=>{
+      const btn = card.querySelector('[data-confirmarencerrar]');
+      btn.disabled = true; btn.textContent = 'Encerrando...';
+      try{
+        await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'encerrarPlano',
+            id_plano: p.id_plano,
+            valor_recebido: card.querySelector('[data-valorrecebido]').value,
+            data_pagamento: card.querySelector('[data-dataencerrar]').value,
+            forma_pagamento: card.querySelector('[data-formaencerrar]').value
+          })
+        });
+        const res = await fetch(API_URL + '?action=planosCliente&id_cliente=' + encodeURIComponent(fichaClienteAtual.id_cliente));
+        const planosAtualizados = await res.json();
+        renderFichaPlanos(planosAtualizados);
+        carregarClientes();
+      }catch(err){
+        btn.disabled = false; btn.textContent = 'Confirmar encerramento';
+        alert('Não foi possível encerrar: ' + err.message);
+      }
+    });
+  }
 
   return card;
 }
