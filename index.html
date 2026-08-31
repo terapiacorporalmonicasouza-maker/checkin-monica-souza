@@ -620,7 +620,7 @@
   <div class="list-eyebrow">Painel interno &middot; não mostrar à cliente</div>
   <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
     <div class="list-title" id="fichaTitulo" style="font-size:22px;">Ficha clínica</div>
-    <button class="note-toggle" id="btnEditarDadosBasicos" style="padding:0; flex-shrink:0;">Editar nome/gênero</button>
+    <button class="note-toggle" id="btnEditarDadosBasicos" style="padding:0; flex-shrink:0;">Editar dados básicos</button>
   </div>
 
   <div id="editarDadosBasicosForm" style="display:none; background:var(--staff-card); border:1px solid var(--staff-border); border-radius:14px; padding:16px; margin-top:10px;">
@@ -631,7 +631,11 @@
       <button data-sexo="feminino" class="active">Feminino</button>
       <button data-sexo="masculino">Masculino</button>
     </div>
-    <div style="display:flex; gap:10px; margin-top:12px;">
+    <label style="display:flex; align-items:center; gap:10px; margin-top:16px; cursor:pointer;">
+      <input type="checkbox" id="editClienteTeste" style="width:20px; height:20px; accent-color:var(--accent);">
+      <span style="font-size:14px; color:var(--staff-text);">🧪 Cliente de teste — não entra no faturamento nem no fechamento mensal</span>
+    </label>
+    <div style="display:flex; gap:10px; margin-top:16px;">
       <button class="btn-ghost" id="btnCancelarEdicaoDados" style="flex:1; border-color:var(--staff-border); color:var(--staff-text); margin:0;">Cancelar</button>
       <button class="btn-primary" id="btnSalvarEdicaoDados" style="flex:1; margin:0;">Salvar</button>
     </div>
@@ -1791,7 +1795,8 @@ async function abrirFicha(c){
 
     fichaClienteAtual.nome = dados.nome || fichaClienteAtual.nome;
     fichaClienteAtual.sexo = dados.sexo || fichaClienteAtual.sexo;
-    document.getElementById('fichaTitulo').textContent = 'Ficha clínica — ' + fichaClienteAtual.nome;
+    fichaClienteAtual.cliente_teste = !!dados.cliente_teste;
+    document.getElementById('fichaTitulo').textContent = tituloFichaComSelo(fichaClienteAtual.nome, fichaClienteAtual.cliente_teste);
 
     if(dados.planos && dados.planos.error) throw new Error(dados.planos.error);
     renderFichaPlanos(Array.isArray(dados.planos) ? dados.planos : []);
@@ -2049,6 +2054,7 @@ document.getElementById('btnEditarDadosBasicos').addEventListener('click', ()=>{
   document.getElementById('editNome').value = fichaClienteAtual.nome || '';
   const sexoAtual = fichaClienteAtual.sexo === 'masculino' ? 'masculino' : 'feminino';
   document.querySelectorAll('#editSexoToggle button').forEach(b=> b.classList.toggle('active', b.dataset.sexo === sexoAtual));
+  document.getElementById('editClienteTeste').checked = !!fichaClienteAtual.cliente_teste;
   document.getElementById('editarDadosBasicosForm').style.display = 'block';
 });
 
@@ -2061,6 +2067,10 @@ document.getElementById('editSexoToggle').addEventListener('click', e=>{
   document.querySelectorAll('#editSexoToggle button').forEach(b=> b.classList.toggle('active', b === e.target));
 });
 
+function tituloFichaComSelo(nome, clienteTeste){
+  return 'Ficha clínica — ' + nome + (clienteTeste ? ' 🧪' : '');
+}
+
 document.getElementById('btnSalvarEdicaoDados').addEventListener('click', async ()=>{
   if(!fichaClienteAtual) return;
   const novoNome = document.getElementById('editNome').value.trim();
@@ -2069,6 +2079,7 @@ document.getElementById('btnSalvarEdicaoDados').addEventListener('click', async 
     return;
   }
   const sexoEscolhido = document.querySelector('#editSexoToggle button.active').dataset.sexo;
+  const clienteTeste = document.getElementById('editClienteTeste').checked;
 
   const btn = document.getElementById('btnSalvarEdicaoDados');
   btn.disabled = true; btn.textContent = 'Salvando...';
@@ -2079,12 +2090,14 @@ document.getElementById('btnSalvarEdicaoDados').addEventListener('click', async 
         action: 'saveDadosCadastrais',
         id_cliente: fichaClienteAtual.id_cliente,
         nome: novoNome,
-        sexo: sexoEscolhido
+        sexo: sexoEscolhido,
+        cliente_teste: clienteTeste
       })
     });
     fichaClienteAtual.nome = novoNome;
     fichaClienteAtual.sexo = sexoEscolhido;
-    document.getElementById('fichaTitulo').textContent = 'Ficha clínica — ' + novoNome;
+    fichaClienteAtual.cliente_teste = clienteTeste;
+    document.getElementById('fichaTitulo').textContent = tituloFichaComSelo(novoNome, clienteTeste);
     document.getElementById('editarDadosBasicosForm').style.display = 'none';
   }catch(err){
     alert('Não foi possível salvar: ' + err.message);
