@@ -698,7 +698,7 @@
 
 <script>
 // ===== CONFIGURAÇÃO =====
-const API_URL = 'https://script.google.com/macros/s/AKfycbxFxmKJShVEPewVXUovkKJWJ5DkeB7e3v2YiHplW3bRK3feDk18ZFyfulh_DUvmOQPakQ/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwUxXH7G0VB-AI13aPmshSaW-wR0_2dTsGUf_4pD0qAYFh7VsjXbBfKzLn0krLWQBQYsg/exec';
 
 const REGION_DEFS_FRONT = [
   { key: 'F_cervical', label: 'Cervical', d: 'M107.3,193.0 L141.5,193.0 L135.9,211.1 L113.0,211.1 Z' },
@@ -1887,17 +1887,18 @@ function buildPlanoCard(p, prominent){
     '</div>' +
     (prominent && (p.status === 'ativo' || p.status === 'vencido') ?
       '<button class="note-toggle" data-toggleencerrar style="margin-top:10px; padding:0; color:var(--danger);">Encerrar plano</button>' +
-      '<div data-encerrarform style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid var(--staff-border);">' +
-        '<div style="font-weight:600; margin-bottom:6px;">Encerrar este plano?</div>' +
-        '<div style="font-size:13px; color:var(--staff-text-soft); margin-bottom:10px;">' +
-          'Sessões realizadas: '+p.sessoes_realizadas+' &middot; Sessões restantes: '+(p.total_sessoes-p.sessoes_realizadas)+'<br>' +
-          'Status atual do pagamento: '+labelStatusPagamentoJS(p.status_pagamento) +
+      '<div data-encerrarform style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid var(--staff-border);">' +
+        '<div style="font-family:var(--serif); font-size:17px; margin-bottom:10px;">Encerrar este plano?</div>' +
+        '<div style="display:flex; gap:16px; font-size:13px; color:var(--staff-text-soft); margin-bottom:16px; padding:10px 12px; background:var(--staff-bg); border-radius:10px;">' +
+          '<div><div style="font-weight:600; color:var(--staff-text);">'+p.sessoes_realizadas+' de '+p.total_sessoes+'</div>Sessões realizadas</div>' +
+          '<div><div style="font-weight:600; color:var(--staff-text);">'+(p.total_sessoes-p.sessoes_realizadas)+'</div>Restantes</div>' +
+          '<div><div style="font-weight:600; color:var(--staff-text);">'+labelStatusPagamentoJS(p.status_pagamento)+'</div>Pagamento atual</div>' +
         '</div>' +
-        '<label class="nc-label">Valor efetivamente recebido (R$)</label>' +
+        '<label class="nc-label" style="margin-top:0;">Valor efetivamente recebido (R$)</label>' +
         '<input type="number" class="nc-input" data-valorrecebido min="0" step="0.01" placeholder="Ex: 100" value="'+(p.valor_pago||'')+'">' +
-        '<label class="nc-label" style="margin-top:8px;">Data do pagamento</label>' +
+        '<label class="nc-label" style="margin-top:16px;">Data do pagamento</label>' +
         '<input type="date" class="nc-input" data-dataencerrar value="'+(p.data_pagamento||'')+'">' +
-        '<label class="nc-label" style="margin-top:8px;">Forma de pagamento</label>' +
+        '<label class="nc-label" style="margin-top:16px;">Forma de pagamento</label>' +
         '<select class="nc-input" data-formaencerrar>' +
           '<option value="">Não informar</option>' +
           '<option value="PIX">PIX</option>' +
@@ -1905,7 +1906,7 @@ function buildPlanoCard(p, prominent){
           '<option value="Cartão">Cartão</option>' +
           '<option value="Outros">Outros</option>' +
         '</select>' +
-        '<div style="display:flex; gap:10px; margin-top:12px;">' +
+        '<div style="display:flex; gap:10px; margin-top:16px;">' +
           '<button class="btn-ghost" data-cancelarencerrar style="flex:1; border-color:var(--staff-border); color:var(--staff-text); margin:0;">Cancelar</button>' +
           '<button class="btn-primary" data-confirmarencerrar style="flex:1; margin:0; background:var(--danger);">Confirmar encerramento</button>' +
         '</div>' +
