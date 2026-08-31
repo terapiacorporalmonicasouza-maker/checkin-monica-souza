@@ -1934,7 +1934,7 @@ function buildPlanoCard(p, prominent){
     const btn = card.querySelector('[data-salvarpag]');
     btn.disabled = true; btn.textContent = 'Salvando...';
     try{
-      await fetch(API_URL, {
+      const res0 = await fetch(API_URL, {
         method: 'POST',
         body: JSON.stringify({
           action: 'updatePagamentoPlano',
@@ -1945,6 +1945,8 @@ function buildPlanoCard(p, prominent){
           forma_pagamento: card.querySelector('[data-formapag]').value
         })
       });
+      const data0 = await res0.json();
+      if(data0.error) throw new Error(data0.error);
       const res = await fetch(API_URL + '?action=planosCliente&id_cliente=' + encodeURIComponent(fichaClienteAtual.id_cliente));
       const planosAtualizados = await res.json();
       renderFichaPlanos(planosAtualizados);
@@ -1967,7 +1969,7 @@ function buildPlanoCard(p, prominent){
       const btn = card.querySelector('[data-confirmarencerrar]');
       btn.disabled = true; btn.textContent = 'Encerrando...';
       try{
-        await fetch(API_URL, {
+        const res0 = await fetch(API_URL, {
           method: 'POST',
           body: JSON.stringify({
             action: 'encerrarPlano',
@@ -1977,6 +1979,8 @@ function buildPlanoCard(p, prominent){
             forma_pagamento: card.querySelector('[data-formaencerrar]').value
           })
         });
+        const data0 = await res0.json();
+        if(data0.error) throw new Error(data0.error);
         const res = await fetch(API_URL + '?action=planosCliente&id_cliente=' + encodeURIComponent(fichaClienteAtual.id_cliente));
         const planosAtualizados = await res.json();
         renderFichaPlanos(planosAtualizados);
