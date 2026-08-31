@@ -826,7 +826,13 @@ function renderClientRows(clientes){
     box.innerHTML = '<div class="history-empty">Nenhuma cliente encontrada.</div>';
     return;
   }
-  clientes.forEach(c=>{
+  const clientesOrdenadas = [...clientes].sort((a,b)=>{
+    const grupoA = a.status === 'ativo' ? 0 : 1;
+    const grupoB = b.status === 'ativo' ? 0 : 1;
+    if(grupoA !== grupoB) return grupoA - grupoB;
+    return a.nome.localeCompare(b.nome, 'pt-BR');
+  });
+  clientesOrdenadas.forEach(c=>{
     const info = STATUS_CLIENTE_INFO[c.status] || STATUS_CLIENTE_INFO.sem_plano;
     const ultimaVisita = c.ultimo_atendimento ? formatDatePt(c.ultimo_atendimento) : 'Nenhum atendimento ainda';
     const row = document.createElement('div');
