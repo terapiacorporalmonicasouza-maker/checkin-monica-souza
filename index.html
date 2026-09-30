@@ -64,6 +64,7 @@
   .client-row{display:flex; align-items:center; justify-content:space-between; text-align:left; padding:16px 18px; background:var(--staff-card); border:1px solid var(--staff-border); border-radius:12px; cursor:pointer; color:inherit; font-family:inherit;}
   .client-row .name{font-size:16px; font-weight:600;}
   .client-row .sub{font-size:13px; color:var(--staff-text-soft); margin-top:2px;}
+  .client-row .sub-horario{font-size:13px; color:var(--gold); margin-top:2px; font-weight:500;}
   .chip{padding:6px 12px; border-radius:999px; font-size:12px; font-weight:600; background:var(--chip-bg); color:var(--ink);}
   .chip.zero{background:var(--danger); color:var(--danger-soft);}
   .loading-msg{font-size:13px; color:var(--staff-text-soft); margin-top:14px;}
@@ -635,6 +636,20 @@
       <input type="checkbox" id="editClienteTeste" style="width:20px; height:20px; accent-color:var(--accent);">
       <span style="font-size:14px; color:var(--staff-text);">🧪 Cliente de teste — não entra no faturamento nem no fechamento mensal</span>
     </label>
+    <label class="nc-label" style="margin-top:16px;">Horário fixo (opcional)</label>
+    <div style="display:flex; gap:10px;">
+      <select id="editHorarioFixoDia" class="nc-input" style="flex:1;">
+        <option value="">Sem horário fixo</option>
+        <option value="Segunda-feira">Segunda-feira</option>
+        <option value="Terça-feira">Terça-feira</option>
+        <option value="Quarta-feira">Quarta-feira</option>
+        <option value="Quinta-feira">Quinta-feira</option>
+        <option value="Sexta-feira">Sexta-feira</option>
+        <option value="Sábado">Sábado</option>
+        <option value="Domingo">Domingo</option>
+      </select>
+      <input type="time" id="editHorarioFixoHora" class="nc-input" style="flex:0 0 130px;">
+    </div>
     <div style="display:flex; gap:10px; margin-top:16px;">
       <button class="btn-ghost" id="btnCancelarEdicaoDados" style="flex:1; border-color:var(--staff-border); color:var(--staff-text); margin:0;">Cancelar</button>
       <button class="btn-primary" id="btnSalvarEdicaoDados" style="flex:1; margin:0;">Salvar</button>
@@ -839,12 +854,17 @@ function renderClientRows(clientes){
   clientesOrdenadas.forEach(c=>{
     const info = STATUS_CLIENTE_INFO[c.status] || STATUS_CLIENTE_INFO.sem_plano;
     const ultimaVisita = c.ultimo_atendimento ? formatDatePt(c.ultimo_atendimento) : 'Nenhum atendimento ainda';
+    const temHorarioFixo = c.horario_fixo_dia && c.horario_fixo_hora;
+    const linhaHorarioFixo = temHorarioFixo
+      ? '<div class="sub-horario">Horário fixo: '+c.horario_fixo_dia+', às '+c.horario_fixo_hora+'</div>'
+      : '';
     const row = document.createElement('div');
     row.className = 'client-row';
     row.style.cursor = 'pointer';
     row.innerHTML =
       '<div style="flex:1;"><div class="name">'+info.emoji+' '+c.nome+'</div>' +
-      '<div class="sub">'+info.label+' &middot; Último atendimento: '+ultimaVisita+'</div></div>';
+      '<div class="sub">'+info.label+' &middot; Último atendimento: '+ultimaVisita+'</div>' +
+      linhaHorarioFixo + '</div>';
     row.addEventListener('click', ()=> abrirFicha(c));
     box.appendChild(row);
   });
@@ -1796,6 +1816,8 @@ async function abrirFicha(c){
     fichaClienteAtual.nome = dados.nome || fichaClienteAtual.nome;
     fichaClienteAtual.sexo = dados.sexo || fichaClienteAtual.sexo;
     fichaClienteAtual.cliente_teste = !!dados.cliente_teste;
+    fichaClienteAtual.horario_fixo_dia = dados.horario_fixo_dia || '';
+    fichaClienteAtual.horario_fixo_hora = dados.horario_fixo_hora || '';
     document.getElementById('fichaTitulo').textContent = tituloFichaComSelo(fichaClienteAtual.nome, fichaClienteAtual.cliente_teste);
 
     if(dados.planos && dados.planos.error) throw new Error(dados.planos.error);
@@ -2055,6 +2077,8 @@ document.getElementById('btnEditarDadosBasicos').addEventListener('click', ()=>{
   const sexoAtual = fichaClienteAtual.sexo === 'masculino' ? 'masculino' : 'feminino';
   document.querySelectorAll('#editSexoToggle button').forEach(b=> b.classList.toggle('active', b.dataset.sexo === sexoAtual));
   document.getElementById('editClienteTeste').checked = !!fichaClienteAtual.cliente_teste;
+  document.getElementById('editHorarioFixoDia').value = fichaClienteAtual.horario_fixo_dia || '';
+  document.getElementById('editHorarioFixoHora').value = fichaClienteAtual.horario_fixo_hora || '';
   document.getElementById('editarDadosBasicosForm').style.display = 'block';
 });
 
@@ -2080,25 +2104,34 @@ document.getElementById('btnSalvarEdicaoDados').addEventListener('click', async 
   }
   const sexoEscolhido = document.querySelector('#editSexoToggle button.active').dataset.sexo;
   const clienteTeste = document.getElementById('editClienteTeste').checked;
+  const horarioFixoDia = document.getElementById('editHorarioFixoDia').value;
+  const horarioFixoHora = horarioFixoDia ? document.getElementById('editHorarioFixoHora').value : '';
 
   const btn = document.getElementById('btnSalvarEdicaoDados');
   btn.disabled = true; btn.textContent = 'Salvando...';
   try{
-    await fetch(API_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       body: JSON.stringify({
         action: 'saveDadosCadastrais',
         id_cliente: fichaClienteAtual.id_cliente,
         nome: novoNome,
         sexo: sexoEscolhido,
-        cliente_teste: clienteTeste
+        cliente_teste: clienteTeste,
+        horario_fixo_dia: horarioFixoDia,
+        horario_fixo_hora: horarioFixoHora
       })
     });
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
     fichaClienteAtual.nome = novoNome;
     fichaClienteAtual.sexo = sexoEscolhido;
     fichaClienteAtual.cliente_teste = clienteTeste;
+    fichaClienteAtual.horario_fixo_dia = horarioFixoDia;
+    fichaClienteAtual.horario_fixo_hora = horarioFixoHora;
     document.getElementById('fichaTitulo').textContent = tituloFichaComSelo(novoNome, clienteTeste);
     document.getElementById('editarDadosBasicosForm').style.display = 'none';
+    carregarClientes();
   }catch(err){
     alert('Não foi possível salvar: ' + err.message);
   }
