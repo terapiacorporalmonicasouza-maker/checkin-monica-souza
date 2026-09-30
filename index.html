@@ -62,9 +62,9 @@
   .list-title{font-family:var(--serif); font-size:28px; font-weight:500; margin-bottom:22px;}
   .client-rows{display:flex; flex-direction:column; gap:10px; overflow:auto;}
   .client-row{display:flex; align-items:center; justify-content:space-between; text-align:left; padding:16px 18px; background:var(--staff-card); border:1px solid var(--staff-border); border-radius:12px; cursor:pointer; color:inherit; font-family:inherit;}
-  .client-row .name{font-size:16px; font-weight:600;}
+  .client-row .name{font-size:16px; font-weight:600; display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
   .client-row .sub{font-size:13px; color:var(--staff-text-soft); margin-top:2px;}
-  .client-row .sub-horario{font-size:13px; color:var(--gold); margin-top:2px; font-weight:500;}
+  .name-horario-badge{font-size:12px; font-weight:600; color:var(--accent-dark); background:var(--gold-soft); border-radius:20px; padding:2px 10px; white-space:nowrap;}
   .chip{padding:6px 12px; border-radius:999px; font-size:12px; font-weight:600; background:var(--chip-bg); color:var(--ink);}
   .chip.zero{background:var(--danger); color:var(--danger-soft);}
   .loading-msg{font-size:13px; color:var(--staff-text-soft); margin-top:14px;}
@@ -832,6 +832,14 @@ function planLabel(tipo){
   return tipo === 'drenagem' ? 'Drenagem Linfática' : 'Massagem Terapêutica';
 }
 
+const DIAS_SEMANA_ABREV_ = {
+  'Segunda-feira':'Seg', 'Terça-feira':'Ter', 'Quarta-feira':'Qua', 'Quinta-feira':'Qui',
+  'Sexta-feira':'Sex', 'Sábado':'Sáb', 'Domingo':'Dom'
+};
+function abreviarDiaSemana(dia){
+  return DIAS_SEMANA_ABREV_[dia] || dia;
+}
+
 const STATUS_CLIENTE_INFO = {
   ativo: {emoji:'🟢', label:'Plano ativo'},
   vencido: {emoji:'🟡', label:'Plano vencido'},
@@ -855,16 +863,15 @@ function renderClientRows(clientes){
     const info = STATUS_CLIENTE_INFO[c.status] || STATUS_CLIENTE_INFO.sem_plano;
     const ultimaVisita = c.ultimo_atendimento ? formatDatePt(c.ultimo_atendimento) : 'Nenhum atendimento ainda';
     const temHorarioFixo = c.horario_fixo_dia && c.horario_fixo_hora;
-    const linhaHorarioFixo = temHorarioFixo
-      ? '<div class="sub-horario">Horário fixo: '+c.horario_fixo_dia+', às '+c.horario_fixo_hora+'</div>'
+    const badgeHorarioFixo = temHorarioFixo
+      ? '<span class="name-horario-badge">🕐 '+abreviarDiaSemana(c.horario_fixo_dia)+', '+c.horario_fixo_hora+'</span>'
       : '';
     const row = document.createElement('div');
     row.className = 'client-row';
     row.style.cursor = 'pointer';
     row.innerHTML =
-      '<div style="flex:1;"><div class="name">'+info.emoji+' '+c.nome+'</div>' +
-      '<div class="sub">'+info.label+' &middot; Último atendimento: '+ultimaVisita+'</div>' +
-      linhaHorarioFixo + '</div>';
+      '<div style="flex:1;"><div class="name">'+info.emoji+' '+c.nome+badgeHorarioFixo+'</div>' +
+      '<div class="sub">'+info.label+' &middot; Último atendimento: '+ultimaVisita+'</div></div>';
     row.addEventListener('click', ()=> abrirFicha(c));
     box.appendChild(row);
   });
